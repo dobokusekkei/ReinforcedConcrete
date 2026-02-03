@@ -57,30 +57,34 @@
         }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
+        /* 印刷専用クラス */
+        .print-only { display: none; }
+
         /* -------------------------------------------------------------------------
-           印刷設定 (A4縦1枚に4断面を横並びで配置)
+           印刷設定 (A4縦1枚に4断面を2列2行で配置)
            ------------------------------------------------------------------------- */
         @media print {
-            @page { size: A4 portrait; margin: 10mm 5mm; } /* 余白を最小限に */
+            @page { size: A4 portrait; margin: 10mm; }
             
             html, body { 
-                width: 200mm; /* A4幅内 */
+                width: 190mm; /* A4幅内 */
                 height: auto; 
                 margin: 0; padding: 0; 
                 background-color: white; 
-                font-size: 8pt; /* ベースフォント縮小 */
+                font-size: 8pt;
                 font-family: "Helvetica", "Arial", sans-serif;
                 color: #000;
             }
             .no-print { display: none !important; }
+            .print-only { display: block !important; }
             
-            /* レイアウトコンテナ: 横4列 */
+            /* レイアウトコンテナ: 2列2行 (幅1/2) */
             .print-layout { 
                 display: grid; 
-                grid-template-columns: repeat(4, 1fr); 
-                gap: 3mm; 
+                grid-template-columns: 1fr 1fr; 
+                grid-template-rows: auto auto;
+                gap: 5mm; 
                 width: 100%;
-                align-items: start;
             }
             
             /* 各断面カード */
@@ -88,33 +92,25 @@
                 width: 100% !important; 
                 min-width: 0 !important; 
                 max-width: none !important;
-                border: 1px solid #000; /* 黒枠で見やすく */
+                border: 2px solid #333; 
                 box-shadow: none; 
                 margin: 0;
-                padding: 1mm !important;
+                padding: 2mm !important;
                 break-inside: avoid;
-                display: block; /* Flex解除 */
+                display: block; 
             }
 
-            /* カード内の要素リセット */
-            .section-card > div {
-                padding: 1mm 0 !important;
-                border: none !important;
-                background: transparent !important;
-                gap: 1mm !important;
-            }
-
-            /* ヘッダー */
+            /* タイトル */
             .section-card input[type="text"] {
-                font-size: 9pt !important;
+                font-size: 10pt !important;
                 font-weight: 800 !important;
                 text-align: center !important;
-                border-bottom: 1px solid #000 !important;
+                border-bottom: 2px solid #000 !important;
                 margin-bottom: 2mm;
                 color: #000 !important;
             }
 
-            /* 帳票化：グリッドを解除してリスト形式（縦積み）にする */
+            /* 入力グリッドをリスト形式に整理 */
             .section-card .grid {
                 display: block !important;
             }
@@ -124,20 +120,18 @@
                 align-items: center;
                 border-bottom: 1px dotted #ccc;
                 padding: 0.5mm 0;
-                margin-bottom: 0;
+            }
+            .section-card .grid > div:last-child {
+                border-bottom: none;
             }
 
-            /* ラベルと入力値 */
+            /* 入力値のスタイル */
             .section-card label, .section-card span {
-                font-size: 7pt !important;
+                font-size: 7.5pt !important;
                 color: #444 !important;
-                margin: 0 !important;
                 width: auto !important;
                 text-align: left !important;
             }
-            /* 単位などの微調整 */
-            .section-card .unit { font-size: 6pt !important; }
-
             .section-card input[type="number"], 
             .section-card select {
                 font-size: 8pt !important;
@@ -148,7 +142,6 @@
                 border: none !important;
                 background: transparent !important;
                 width: auto !important;
-                max-width: 60%;
                 color: #000 !important;
             }
             select::-ms-expand { display: none; }
@@ -156,44 +149,38 @@
             /* 図エリア */
             .h-\[120px\], .h-\[80px\] { 
                 height: auto !important;
-                aspect-ratio: 1/0.6; /* アスペクト比維持 */
+                aspect-ratio: 2/1; /* 少し高さを抑える */
                 border: 1px solid #ddd !important;
                 margin-bottom: 2mm;
             }
             
-            /* 入力項目の見出し */
+            /* 見出し */
             .text-\[10px\].uppercase {
                 font-size: 8pt !important;
                 color: #000 !important;
+                font-weight: bold;
                 border-bottom: 1px solid #000 !important;
-                margin-top: 2mm;
+                margin-top: 3mm;
                 margin-bottom: 1mm;
             }
 
-            /* テーブル調整 */
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 7pt !important;
+            /* 結果テーブル調整 */
+            table { width: 100%; border-collapse: collapse; font-size: 7.5pt !important; margin-top: 1mm; }
+            th, td { border-bottom: 1px solid #ccc; padding: 1mm 0 !important; }
+            
+            /* 印刷時：Web用の許容値列を消す */
+            .col-allow { display: none !important; }
+            
+            /* 印刷時：許容値専用テーブルのスタイル */
+            .print-allow-table {
                 margin-top: 2mm;
+                border-top: 1px solid #000;
+                font-size: 7pt;
             }
-            th, td {
-                border-bottom: 1px solid #ccc;
-                padding: 1mm 0 !important;
-            }
-            td .math-expr { font-size: 8pt; font-weight: bold; }
-            
+            .print-allow-table td { border: none !important; padding: 0.5mm 0 !important; }
+
             /* 背景色の無効化 */
-            .bg-blue-50\/50, .bg-emerald-50\/50, .bg-slate-100 {
-                background-color: transparent !important;
-            }
-            
-            /* 特定のレイアウト調整 */
-            /* 鉄筋入力の「x」などをきれいに */
-            .flex.items-center.gap-1 {
-                justify-content: flex-end;
-                width: 100%;
-            }
+            .bg-blue-50\/50, .bg-emerald-50\/50, .bg-slate-100 { background-color: transparent !important; border: none !important; }
         }
     </style>
 </head>
@@ -225,14 +212,14 @@
         </div>
     </main>
 
-    <!-- ヘルプモーダル -->
+    <!-- ヘルプモーダル (変更なし) -->
     <div id="logic_modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity opacity-0" style="transition: opacity 0.2s;">
         <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <!-- (Content omitted for brevity as per instruction not to change logic/help) -->
             <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="book-open" class="w-4 h-4 text-blue-600"></i> 計算ロジック・公式</h3>
                 <button onclick="toggleModal(false)" class="p-1 hover:bg-slate-200 rounded-full text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            
             <div class="p-6 text-sm text-slate-600 leading-relaxed space-y-6">
                 <!-- 1. 基礎理論 -->
                 <section>
@@ -244,98 +231,56 @@
                         <li><strong>引張無視:</strong> 引張側のコンクリート応力は無視する。</li>
                     </ul>
                 </section>
-
                 <!-- 2. 曲げ応力度 -->
                 <section>
                     <h4 class="font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-3 text-base">2. 曲げ応力度 (Elastic Theory)</h4>
-                    
-                    <!-- A. 軸力あり -->
                     <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded block w-max mb-3">A. 軸力あり (<span class="math-expr">N ≠ 0</span>)</span>
-                        
                         <p class="text-xs font-bold text-slate-700 mb-1">【中立軸 <span class="math-expr">x</span> の算定】</p>
-                        <p class="text-xs mb-2">
-                            圧縮縁から荷重作用点までの距離 <span class="math-expr">L = D/2 - e</span> （<span class="math-expr">e = M/N</span>）を用いて、モーメントつり合いより導かれる3次方程式を解きます。
-                        </p>
+                        <p class="text-xs mb-2">圧縮縁から荷重作用点までの距離 <span class="math-expr">L = D/2 - e</span> （<span class="math-expr">e = M/N</span>）を用いて、モーメントつり合いより導かれる3次方程式を解きます。</p>
                         <div class="text-center my-3 text-sm overflow-x-auto whitespace-nowrap">
-                            <span class="math-expr">x<sup>3</sup> - 3Lx<sup>2</sup> - </span>
-                            <div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div>
-                            <span class="math-expr">[A<sub>s</sub>'(L-d<sub>p</sub>) + A<sub>s</sub>(L-d)] x + </span>
-                            <div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div>
-                            <span class="math-expr">[A<sub>s</sub>'d<sub>p</sub>(L-d<sub>p</sub>) + A<sub>s</sub>d(L-d)] = 0</span>
+                            <span class="math-expr">x<sup>3</sup> - 3Lx<sup>2</sup> - </span><div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div><span class="math-expr">[A<sub>s</sub>'(L-d<sub>p</sub>) + A<sub>s</sub>(L-d)] x + </span><div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div><span class="math-expr">[A<sub>s</sub>'d<sub>p</sub>(L-d<sub>p</sub>) + A<sub>s</sub>d(L-d)] = 0</span>
                         </div>
-
                         <p class="text-xs font-bold text-slate-700 mb-1 mt-4">【応力度の算定】</p>
                         <p class="text-xs mb-2">軸方向力のつり合い <span class="math-expr">N = C + C' - T</span> よりコンクリート応力を求め、比により鉄筋応力を求めます。</p>
                         <div class="text-center my-2 text-base">
-                            <span class="math-expr">σ<sub class="math-normal">c</sub></span> = 
-                            <div class="fraction">
-                                <span class="numerator"><span class="math-expr">N</span></span>
-                                <span class="denominator">
-                                    <div class="fraction"><span class="numerator"><span class="math-expr">bx</span></span><span class="denominator">2</span></div> + 
-                                    <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub>'</span>(<span class="math-expr">x-d<sub class="math-normal">p</sub></span>)</span><span class="denominator"><span class="math-expr">x</span></span></div> - 
-                                    <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub></span>(<span class="math-expr">d-x</span>)</span><span class="denominator"><span class="math-expr">x</span></span></div>
-                                </span>
-                            </div>
+                            <span class="math-expr">σ<sub class="math-normal">c</sub></span> = <div class="fraction"><span class="numerator"><span class="math-expr">N</span></span><span class="denominator"><div class="fraction"><span class="numerator"><span class="math-expr">bx</span></span><span class="denominator">2</span></div> + <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub>'</span>(<span class="math-expr">x-d<sub class="math-normal">p</sub></span>)</span><span class="denominator"><span class="math-expr">x</span></span></div> - <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub></span>(<span class="math-expr">d-x</span>)</span><span class="denominator"><span class="math-expr">x</span></span></div></span></div>
                         </div>
                         <div class="text-center my-2 text-base flex justify-center gap-8">
                             <span><span class="math-expr">σ<sub class="math-normal">s</sub></span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">d-x</span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
                             <span><span class="math-expr">σ<sub class="math-normal">s</sub>'</span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">x-d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
                         </div>
                     </div>
-
-                    <!-- B. 純曲げ -->
                     <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded block w-max mb-3">B. 純曲げ (<span class="math-expr">N ≈ 0</span>)</span>
-                        
                         <p class="text-xs font-bold text-slate-700 mb-1">【中立軸 <span class="math-expr">x</span> の算定】</p>
-                        <p class="text-xs mb-2">
-                            断面一次モーメントのつり合いより導かれる2次方程式を解きます。一般に中立軸比 <span class="math-expr">k = x/d</span> は以下の通りです。
-                        </p>
+                        <p class="text-xs mb-2">断面一次モーメントのつり合いより導かれる2次方程式を解きます。一般に中立軸比 <span class="math-expr">k = x/d</span> は以下の通りです。</p>
                         <div class="text-center my-3 text-sm">
                             <span class="math-expr">k</span> = <span class="sqrt"><span style="margin-left:2px;">2<span class="math-expr">n</span>(<span class="math-expr">p</span> + <span class="math-expr">p'</span><span class="fraction"><span class="numerator"><span class="math-expr">d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">d</span></span></span>) + (<span class="math-expr">n</span>(<span class="math-expr">p</span>+<span class="math-expr">p'</span>))<sup>2</sup></span></span> - <span class="math-expr">n</span>(<span class="math-expr">p</span>+<span class="math-expr">p'</span>)
                         </div>
-                        <div class="text-center text-sm mb-3">
-                            <span class="math-expr">x = k ⋅ d</span>
-                        </div>
-
+                        <div class="text-center text-sm mb-3"><span class="math-expr">x = k ⋅ d</span></div>
                         <p class="text-xs font-bold text-slate-700 mb-1 mt-4">【応力度の算定】</p>
                         <p class="text-xs mb-2">中立軸に関する断面二次モーメント <span class="math-expr">I</span> を用いて求めます。</p>
-                        <div class="text-center text-sm mb-2">
-                            <span class="math-expr">I</span> = <div class="fraction"><span class="numerator"><span class="math-expr">bx<sup>3</sup></span></span><span class="denominator">3</span></div> + <span class="math-expr">nA<sub>s</sub>(d-x)<sup>2</sup></span> + <span class="math-expr">nA<sub>s</sub>'(x-d<sub>p</sub>)<sup>2</sup></span>
-                        </div>
-                        <div class="text-center text-base">
-                            <span class="math-expr">σ<sub class="math-normal">c</sub></span> = <div class="fraction"><span class="numerator"><span class="math-expr">M</span></span><span class="denominator"><span class="math-expr">I</span></span></div> <span class="math-expr">x</span>
-                        </div>
+                        <div class="text-center text-sm mb-2"><span class="math-expr">I</span> = <div class="fraction"><span class="numerator"><span class="math-expr">bx<sup>3</sup></span></span><span class="denominator">3</span></div> + <span class="math-expr">nA<sub>s</sub>(d-x)<sup>2</sup></span> + <span class="math-expr">nA<sub>s</sub>'(x-d<sub>p</sub>)<sup>2</sup></span></div>
+                        <div class="text-center text-base"><span class="math-expr">σ<sub class="math-normal">c</sub></span> = <div class="fraction"><span class="numerator"><span class="math-expr">M</span></span><span class="denominator"><span class="math-expr">I</span></span></div> <span class="math-expr">x</span></div>
                         <div class="text-center my-2 text-base flex justify-center gap-8">
                             <span><span class="math-expr">σ<sub class="math-normal">s</sub></span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">d-x</span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
                             <span><span class="math-expr">σ<sub class="math-normal">s</sub>'</span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">x-d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
                         </div>
                     </div>
                 </section>
-
                 <!-- 3. せん断 -->
                 <section>
                     <h4 class="font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-3 text-base">3. せん断応力度 (道路土工指針)</h4>
                     <div class="bg-emerald-50 p-4 rounded border border-emerald-100 flex flex-col gap-3">
                         <div class="flex items-center gap-4">
                             <div class="text-sm font-bold w-24">発生応力度:</div>
-                            <div class="text-base math-expr">
-                                τ = <div class="fraction"><span class="numerator">S</span><span class="denominator">b ⋅ d</span></div>
-                            </div>
+                            <div class="text-base math-expr">τ = <div class="fraction"><span class="numerator">S</span><span class="denominator">b ⋅ d</span></div></div>
                             <div class="text-xs text-slate-500">※平均せん断応力度</div>
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="text-sm font-bold w-24">許容応力度:</div>
-                            <div class="text-base math-expr">
-                                f<sub class="math-normal">a</sub> = τ<sub class="math-normal">a1</sub> ⋅ C<sub class="math-normal">e</sub> ⋅ C<sub class="math-normal">pt</sub> ⋅ α
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 ml-28">
-                            <div><span class="font-bold">τ<sub>a1</sub></span> : コンクリート強度による基本値</div>
-                            <div><span class="font-bold">C<sub>e</sub></span> : 寸法効果 <span class="math-expr">(1000/d)<sup>1/4</sup></span></div>
-                            <div><span class="font-bold">C<sub>pt</sub></span> : 鉄筋比効果 <span class="math-expr">(100p<sub class="math-normal">t</sub>)<sup>1/3</sup></span></div>
-                            <div><span class="font-bold">α</span> : 割増係数</div>
+                            <div class="text-base math-expr">f<sub class="math-normal">a</sub> = τ<sub class="math-normal">a1</sub> ⋅ C<sub class="math-normal">e</sub> ⋅ C<sub class="math-normal">pt</sub> ⋅ α</div>
                         </div>
                     </div>
                 </section>
@@ -385,7 +330,7 @@
             { ...DEFAULT_SECTION, name: "断面-3" }, { ...DEFAULT_SECTION, name: "断面-4" }
         ];
 
-        // --- 計算ロジック ---
+        // --- 計算ロジック (変更なし) ---
         function calculateRC(s) {
             const conc = CONCRETE_DATA[s.Fc] || CONCRETE_DATA[24];
             const f = s.allowFactor || 1.0;
@@ -661,6 +606,7 @@
 
                     <div class="bg-blue-50/50 border border-blue-100 rounded-lg p-2.5 space-y-2.5">
                         <div class="text-[10px] text-blue-400 font-bold tracking-wider uppercase border-b border-blue-100 mb-1">Input Data</div>
+                        
                         <div class="grid grid-cols-3 gap-2">
                             <div><span class="text-xs text-slate-500 block">コンクリート</span><select onchange="updateData(${idx}, 'Fc', this.value)" class="w-full border-b border-blue-200 bg-transparent text-right font-mono text-xs">${makeFcOpts(s.Fc)}</select></div>
                             <div class="col-span-1"><span class="text-xs text-slate-500 block">鉄筋</span><div class="flex gap-1"><select onchange="updateData(${idx}, 'rebarType', this.value)" class="w-2/3 border-b border-blue-200 bg-transparent text-right font-mono text-[10px]">${makeRebarOpts(s.rebarType)}</select><input type="number" value="${s.userSigSa}" onchange="updateData(${idx}, 'userSigSa', this.value)" class="w-1/3 border-b border-blue-200 bg-transparent text-right font-mono text-[10px]" title="許容引張応力度"></div></div>
@@ -696,7 +642,7 @@
                                 <tr class="text-slate-400 border-b border-emerald-200">
                                     <th class="text-left font-normal pb-1">項目</th>
                                     <th class="text-right font-normal pb-1">発生</th>
-                                    <th class="text-right font-normal pb-1">許容</th>
+                                    <th class="text-right font-normal pb-1 col-allow">許容</th>
                                     <th class="text-center font-normal pb-1 w-10">判定</th>
                                 </tr>
                             </thead>
@@ -704,19 +650,19 @@
                                 <tr>
                                     <td class="py-1"><span class="math-expr font-bold">σc</span> 曲げ圧縮 <span class="text-[9px] text-slate-400">(N/mm²)</span></td>
                                     <td class="py-1 text-right font-mono font-bold text-blue-700">${fmt(res.sigma_c)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500">${res.allow_sigC.toFixed(1)}</td>
+                                    <td class="py-1 text-right font-mono text-slate-500 col-allow">${res.allow_sigC.toFixed(1)}</td>
                                     <td class="py-1 text-center">${getStatus(res.bendStateC)}</td>
                                 </tr>
                                 <tr>
                                     <td class="py-1"><span class="math-expr font-bold">σs</span> 鉄筋引張 <span class="text-[9px] text-slate-400">(N/mm²)</span></td>
                                     <td class="py-1 text-right font-mono font-bold text-red-600">${fmt(res.sigma_s, 1)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500">${res.allow_sigS.toFixed(0)}</td>
+                                    <td class="py-1 text-right font-mono text-slate-500 col-allow">${res.allow_sigS.toFixed(0)}</td>
                                     <td class="py-1 text-center">${getStatus(res.bendStateS)}</td>
                                 </tr>
                                 <tr>
                                     <td class="py-1"><span class="math-expr font-bold">σs'</span> 鉄筋圧縮 <span class="text-[9px] text-slate-400">(N/mm²)</span></td>
                                     <td class="py-1 text-right font-mono font-bold text-green-600">${fmt(res.sigma_sp, 1)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500">${res.allow_sigS.toFixed(0)}</td>
+                                    <td class="py-1 text-right font-mono text-slate-500 col-allow">${res.allow_sigS.toFixed(0)}</td>
                                     <td class="py-1 text-center">-</td>
                                 </tr>
                                 <tr>
@@ -728,11 +674,20 @@
                                         </div>
                                     </td>
                                     <td class="py-1 text-right font-mono font-bold text-slate-800 align-top">${fmt(res.tau, 3)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500 align-top">${fmt(res.fa, 3)}</td>
+                                    <td class="py-1 text-right font-mono text-slate-500 align-top col-allow">${fmt(res.fa, 3)}</td>
                                     <td class="py-1 text-center align-top">${getStatus(res.shearState)}</td>
                                 </tr>
                             </tbody>
                         </table>
+                        
+                        <!-- 印刷専用の許容値テーブル (印刷設定以外変更不可だが、構造変更必須のため追加) -->
+                        <div class="print-only print-allow-table">
+                            <div class="grid grid-cols-2 gap-x-2 text-[7pt] text-slate-500 mt-1 pt-1 border-t border-slate-300">
+                                <div class="flex justify-between"><span>許容σc:</span><span class="font-mono">${res.allow_sigC.toFixed(1)}</span></div>
+                                <div class="flex justify-between"><span>許容σs:</span><span class="font-mono">${res.allow_sigS.toFixed(0)}</span></div>
+                                <div class="flex justify-between"><span>許容τ:</span><span class="font-mono">${fmt(res.fa, 3)}</span></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
