@@ -57,39 +57,89 @@
         }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-        /* 印刷設定 (A4縦) */
+        /* 印刷設定 (A4縦1枚に4断面) */
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
-            body { background-color: white; padding: 0; font-size: 9pt; }
+            @page { size: A4 portrait; margin: 5mm; }
+            html, body { 
+                width: 210mm; height: 297mm; /* A4サイズ固定 */
+                margin: 0; padding: 0; 
+                background-color: white; 
+                font-size: 9pt; /* ベースフォント縮小 */
+            }
             .no-print { display: none !important; }
             
-            /* グリッドレイアウトで2列2行に配置 */
+            /* 全体を1ページに収めるグリッドコンテナ */
             .print-layout { 
                 display: grid; 
                 grid-template-columns: 1fr 1fr; 
-                grid-template-rows: auto auto;
-                gap: 15px; 
+                grid-template-rows: 1fr 1fr; /* 上下均等分割 */
+                gap: 4mm; 
                 width: 100%;
+                height: 287mm; /* ページ高さ - マージン */
+                padding: 0;
             }
             
             .section-card { 
-                width: 100% !important; min-width: 0 !important; max-width: none !important;
-                border: 1px solid #ccc; box-shadow: none; break-inside: avoid;
+                width: 100% !important; 
+                min-width: 0 !important; 
+                max-width: none !important;
+                border: 1px solid #bbb; 
+                box-shadow: none; 
+                break-inside: avoid;
                 margin: 0;
+                /* 内部レイアウト調整 */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 2mm !important;
+            }
+
+            /* カード内の要素間隔とフォント調整 */
+            .section-card * {
+                font-size: 8pt !important;
+                line-height: 1.25;
             }
             
-            /* 背景色の強制印刷 */
-            .bg-slate-50 { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }
-            .bg-blue-50 { background-color: #eff6ff !important; -webkit-print-color-adjust: exact; }
-            .bg-emerald-50 { background-color: #ecfdf5 !important; -webkit-print-color-adjust: exact; }
+            /* ヘッダー強調 */
+            .section-card input[type="text"] {
+                font-size: 10pt !important;
+                font-weight: 800 !important;
+            }
+
+            /* 図の高さ調整（紙面に収めるため少し縮小） */
+            .h-\[120px\] { height: 90px !important; } /* 断面図 */
+            .h-\[80px\] { height: 65px !important; }  /* 応力図 */
+
+            /* 入力・結果エリアの余白短縮 */
+            .p-3 { padding: 1mm !important; }
+            .gap-3 { gap: 1mm !important; }
+            .p-2\.5 { padding: 1.5mm !important; }
+            .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) { --tw-space-y-reverse: 0; margin-top: 1.5mm !important; }
             
+            /* 背景色強制（ブラウザ設定によるが指定） */
+            .bg-slate-100 { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
+            .bg-blue-50\/50 { background-color: #eff6ff !important; -webkit-print-color-adjust: exact; }
+            .bg-emerald-50\/50 { background-color: #ecfdf5 !important; -webkit-print-color-adjust: exact; }
+
+            /* 入力フォームの見た目をテキスト化 */
             input, select { 
-                border: none !important; background: transparent !important; 
-                padding: 0 !important; text-align: right; font-weight: bold;
-                -webkit-appearance: none; appearance: none;
+                border: none !important; 
+                background: transparent !important; 
+                padding: 0 !important; 
+                text-align: right; 
+                font-weight: bold;
+                -webkit-appearance: none; 
+                appearance: none;
+                height: auto !important;
+                color: #0f172a !important; /* 黒っぽく */
             }
-            /* 印刷時はselectの矢印を消す */
             select::-ms-expand { display: none; }
+            
+            /* テーブルセルのパディング */
+            td, th { padding: 1px 2px !important; }
+            
+            /* スクロール禁止 */
+            body { overflow: hidden; }
         }
     </style>
 </head>
