@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RC断面計算（4断面一括）Ver.2.1</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .section-card { min-width: 320px; }
+        
+        /* 印刷用スタイル */
+        @media print {
+            @page { size: landscape; margin: 10mm; }
+            body { background-color: white; -webkit-print-color-adjust: exact; padding: 0; }
+            .no-print { display: none !important; }
+            .print-layout { 
+                display: grid; 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 15px; 
+                width: 100%;
+                overflow: visible !important;
+            }
+            .section-card { 
+                width: auto !important;
+                min-width: 0 !important;
+                border: 1px solid #ddd;
+                box-shadow: none;
+                break-inside: avoid;
+            }
+            input, select { 
+                border: none !important; 
+                background: transparent !important; 
+                appearance: none; 
+                padding: 0 !important;
+                font-weight: bold;
+                color: #0f172a; 
+                text-align: right;
+            }
+            select { text-align-last: right; }
+            .input-label { color: #64748b; }
+            input[type=number]::-webkit-inner-spin-button, 
+            input[type=number]::-webkit-outer-spin-button { 
+                -webkit-appearance: none; 
+                margin: 0; 
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <!-- ナビゲーション & アクションバー -->
+    <div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-4 py-3 flex flex-wrap items-center justify-between gap-4 no-print">
+        <div class="flex items-center gap-2">
+            <i data-lucide="calculator" class="w-6 h-6 text-blue-600"></i>
+            <h1 class="text-xl font-bold text-slate-800">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1">許容応力度法 Ver.2.1</span></h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="showLogicInfo()" class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition">
+                <i data-lucide="info" class="w-4 h-4"></i> 計算式について
+            </button>
+            <div class="h-6 w-px bg-slate-300 mx-1"></div>
+            <button onclick="saveData()" class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition">
+                <i data-lucide="save" class="w-4 h-4"></i> 保存
+            </button>
+            <label class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4"></i> 読込
+                <input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadData(this)">
+            </label>
+            <button onclick="window.print()" class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition">
+                <i data-lucide="printer" class="w-4 h-4"></i> 印刷
+            </button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ：4断面リスト -->
+    <div class="p-4 md:p-6 overflow-x-auto">
+        <div class="print-layout flex gap-4 pb-8" id="sections_container" style="width: max-content; min-width: 100%;">
+            <!-- JSで描画 -->
+        </div>
+    </div>
+
+    <!-- 計算式説明モーダル -->
+    <div id="logic_modal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i> 計算ロジック詳細</h3>
+                <button onclick="document.getElementById('logic_modal').classList.add('hidden')" class="p-1 hover:bg-slate-100 rounded">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="prose prose-sm text-slate-600 leading-relaxed">
+                <div class="bg-blue-50 p-3 rounded border border-blue-100 mb-4 text-xs">
+                    <strong>計算前提 (Ver.2.1):</strong><br>
+                    入力された断面力は「部材全幅（入力幅 b）」に対する値として扱います。<br>
+                    計算時に <strong>部材長 (b/1000 m) で除算</strong> し、単位幅(1m)あたりの力に換算して計算します。<br>
+                    鉄筋量は、入力された幅(b)に対する本数から、1000mm幅あたりの密度に換算されます。
+                </div>
+
+                <h4 class="font-bold text-slate-800 border-b pb-1">1. 曲げ応力度 (弾性理論)</h4>
+                <div class="text-xs font-mono my-2 bg-slate-50 p-2 rounded">
+                    [A. 純曲げ (N ≈ 0)]<br>
+                    複鉄筋長方形断面の厳密解を使用。<br>
+                    p = As/(b·d), p' = As'/(b·d)<br>
+                    k = √[2n(p + p'dp/d) + (n(p+p'))²] - n(p+p')<br>
+                    x = k·d<br>
+                    σs = M / (As · j · d)
+                </div>
+                <div class="text-xs font-mono my-2 bg-slate-50 p-2 rounded">
+                    [B. 軸力あり (N ≠ 0)]<br>
+                    3次方程式により中立軸 x を算定。<br>
+                    σc = N / { bx/2 + n·As'(x-dp)/x - n·As(d-x)/x }
+                </div>
+
+                <h4 class="font-bold text-slate-800 mt-4 border-b pb-1">2. せん断応力度 (道路土工指針準拠)</h4>
+                <div class="text-xs font-mono my-2 bg-slate-50 p-2 rounded">
+                    <strong>τ = S / (b · d)</strong><br>
+                    fa = τa1 × Ce × Cpt
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascript -->
+    <script>
+        lucide.createIcons();
+
+        // -----------------------------------------------------
+        // 定数・設定
+        // -----------------------------------------------------
+        const REBAR_AREAS = {
+            "D10": 71.33, "D13": 126.7, "D16": 198.6, "D19": 286.5,
+            "D22": 387.1, "D25": 506.7, "D29": 642.4, "D32": 794.2,
+            "D35": 956.6, "D38": 1140, "D41": 1340
+        };
+
+        const TAU_A1_MAP = [
+            { fc: 18, val: 0.21 }, { fc: 21, val: 0.22 }, { fc: 24, val: 0.23 },
+            { fc: 27, val: 0.24 }, { fc: 30, val: 0.25 }, { fc: 40, val: 0.29 },
+            { fc: 50, val: 0.31 }, { fc: 60, val: 0.33 }
+        ];
+
+        const DEFAULT_SECTION = {
+            name: "断面",
+            b: 1000, D: 300, dt: 60, dp: 60,
+            barSizeT: "D13", barCountT: 8, manualAs: null,
+            barSizeC: "D13", barCountC: 4, manualAsp: null,
+            N_kN: 0, M_kNm: 20, S_kN: 15,
+            n: 15, Fc: 24, loadType: 'Long'
+        };
+
+        let sections = [
+            { ...DEFAULT_SECTION, name: "断面-1" },
+            { ...DEFAULT_SECTION, name: "断面-2" },
+            { ...DEFAULT_SECTION, name: "断面-3" },
+            { ...DEFAULT_SECTION, name: "断面-4" }
+        ];
+
+        // -----------------------------------------------------
+        // 計算コアロジック
+        // -----------------------------------------------------
+        function getBasicShearStrength(fc) {
+            if (fc <= 18) return 0.21;
+            if (fc >= 60) return 0.33;
+            for (let i = 0; i < TAU_A1_MAP.length - 1; i++) {
+                const lower = TAU_A1_MAP[i];
+                const upper = TAU_A1_MAP[i+1];
+                if (fc >= lower.fc && fc <= upper.fc) {
+                    const ratio = (fc - lower.fc) / (upper.fc - lower.fc);
+                    return lower.val + (upper.val - lower.val) * ratio;
+                }
+            }
+            return 0.23; 
+        }
+
+        function calculateRC(s) {
+            // -------------------------------------------------
+            // 1m幅への正規化 (Calculation Context)
+            // -------------------------------------------------
+            const CALC_B = 1000.0;
+            const width_ratio = CALC_B / s.b;
+            const member_len_m = s.b / 1000.0; // 部材長(m) = 幅(mm)/1000
+
+            const d = s.D - s.dt;
+            const dp = s.dp;
+            const n = s.n;
+
+            // 鉄筋量 (1000mm幅あたりに換算)
+            const As_total = s.manualAs !== null ? s.manualAs : (REBAR_AREAS[s.barSizeT] || 0) * s.barCountT;
+            const Asp_total = s.manualAsp !== null ? s.manualAsp : (REBAR_AREAS[s.barSizeC] || 0) * s.barCountC;
+            const As = As_total * width_ratio;
+            const Asp = Asp_total * width_ratio;
+            
+            // 断面力 (部材長で除して単位幅あたりに換算)
+            const N_val = (s.N_kN / member_len_m) * 1000.0;     // kN/m -> N
+            const M_val = (s.M_kNm / member_len_m) * 1000000.0; // kNm/m -> Nmm
+            const S_val = (s.S_kN / member_len_m) * 1000.0;     // kN/m -> N
+
+            // 計算には正規化した b=1000 を使用
+            const b = CALC_B;
+
+            let res = { 
+                x: 0, sigma_c: 0, sigma_s: 0, sigma_sp: 0, 
+                tau: 0, fa: 0, Ce: 1, Cpt: 1, shearState: 'ok', tau_a1_base: 0,
+                state: 'ok', msg: '', As_total, Asp_total, d 
+            };
+
+            try {
+                // --- 曲げ計算 ---
+                const EPS_N = 1e-6 * Math.max(Math.abs(N_val), 1.0);
+                let x = null;
+
+                if (Math.abs(N_val) < EPS_N) {
+                    // [純曲げ]
+                    const p = As / (b * d);
+                    const pp = Asp / (b * d);
+                    const t1 = 2 * n * (p + pp * dp / d);
+                    const t2 = Math.pow(n * (p + pp), 2);
+                    const k = Math.sqrt(t1 + t2) - n * (p + pp);
+                    
+                    x = k * d;
+                    res.x = x;
+
+                    const num_j = Math.pow(k, 2) * (1 - k/3.0) + 2 * n * pp * (k - dp/d) * (1 - dp/d);
+                    const den_j = Math.pow(k, 2) + 2 * n * pp * (k - dp/d);
+                    const j_val = num_j / den_j;
+                    const Lc = (k / 2.0) * (1 - k/3.0) + (n * pp / k) * (k - dp/d) * (1 - dp/d);
+
+                    res.sigma_c = M_val / (b * Math.pow(d, 2) * Lc);
+                    
+                    if (Math.abs(x) < 1e-9) res.sigma_sp = 0;
+                    else res.sigma_sp = n * res.sigma_c * (x - dp) / x;
+                    
+                    res.sigma_s = M_val / (As * j_val * d);
+
+                } else {
+                    // [軸力あり]
+                    const L = s.D / 2.0 - M_val / N_val;
+                    const Coef1 = (6.0 * n / b) * (Asp * (L - dp) + As * (L - d));
+                    const Coef2 = (6.0 * n / b) * (Asp * dp * (L - dp) + As * d * (L - d));
+                    const F = (v) => Math.pow(v, 3) - 3 * L * Math.pow(v, 2) - Coef1 * v + Coef2;
+                    const dF = (v) => 3 * Math.pow(v, 2) - 6 * L * v - Coef1;
+
+                    x = 0.4 * d;
+                    for(let i=0; i<100; i++) {
+                        const fx = F(x);
+                        const dfx = dF(x);
+                        if(Math.abs(dfx) < 1e-12) break;
+                        const nx = x - fx/dfx;
+                        if(Math.abs(nx - x) < 1e-6) { x = nx; break; }
+                        x = nx;
+                    }
+
+                    res.x = x;
+                    const denom = 0.5 * b * x + n * Asp * (x - dp) / x - n * As * (d - x) / x;
+                    if (Math.abs(denom) < 1e-9) throw new Error("denom≒0");
+                    res.sigma_c = N_val / denom;
+                    
+                    if(Math.abs(x) < 1e-5) throw new Error("x≒0");
+                    res.sigma_sp = n * res.sigma_c * (x - dp) / x;
+                    res.sigma_s = n * res.sigma_c * (d - x) / x;
+                }
+                
+                if(res.x <= 0 || res.x >= d) { res.state = 'warn'; res.msg = '全断面圧縮等'; }
+
+                // --- せん断計算 (S / bd) ---
+                // const j = d - res.x / 3; // Old logic
+                res.tau = S_val / (b * d);  // New logic: 平均せん断応力度
+
+                let tau_a1 = getBasicShearStrength(s.Fc);
+                let tau_a1_final = tau_a1;
+                if (s.loadType === 'Short') tau_a1_final *= 1.5;
+                res.tau_a1_base = tau_a1_final; 
+
+                let ce_val = Math.pow(1000.0 / d, 0.25);
+                if (ce_val < 0.7) ce_val = 0.7;
+                if (ce_val > 1.5) ce_val = 1.5;
+                res.Ce = ce_val;
+
+                const pt = As / (b * d);
+                let cpt_val = Math.pow(100.0 * pt, 1.0/3.0);
+                if (cpt_val < 0.7) cpt_val = 0.7;
+                if (cpt_val > 1.5) cpt_val = 1.5;
+                res.Cpt = cpt_val;
+
+                res.fa = tau_a1_final * res.Ce * res.Cpt;
+                res.shearState = (Math.abs(res.tau) <= res.fa) ? 'ok' : 'ng';
+
+            } catch(e) {
+                res.state = 'error'; res.msg = e.message;
+            }
+            return res;
+        }
+
+        function copySection1(targetIdx) {
+            if (!confirm('断面1の形状・配筋データをコピーしますか？\n（断面力は変更されません）')) return;
+            const src = sections[0];
+            const target = sections[targetIdx];
+            
+            // コピー対象 (断面力以外)
+            target.b = src.b;
+            target.D = src.D;
+            target.dt = src.dt;
+            target.dp = src.dp;
+            target.barSizeT = src.barSizeT;
+            target.barCountT = src.barCountT;
+            target.barSizeC = src.barSizeC;
+            target.barCountC = src.barCountC;
+            target.manualAs = src.manualAs;
+            target.manualAsp = src.manualAsp;
+            target.Fc = src.Fc;
+            target.n = src.n;
+            target.loadType = src.loadType; // 諸元としてコピー
+            
+            renderAll();
+        }
+
+        // -----------------------------------------------------
+        // レンダリング
+        // -----------------------------------------------------
+        function renderAll() {
+            const container = document.getElementById('sections_container');
+            container.innerHTML = '';
+            sections.forEach((sec, idx) => {
+                const res = calculateRC(sec);
+                const html = createSectionHTML(idx, sec, res);
+                container.insertAdjacentHTML('beforeend', html);
+                setTimeout(() => {
+                    drawSectionDetail(`svg_section_${idx}`, sec, res);
+                    drawStressDiagram(`svg_stress_${idx}`, sec, res);
+                }, 0);
+            });
+            lucide.createIcons();
+        }
+
+        function createSectionHTML(idx, s, res) {
+            const isErr = res.state === 'error';
+            const isShearNG = res.shearState === 'ng';
+            let statusText = 'OK';
+            let statusClass = 'bg-blue-50 text-blue-700';
+
+            if (isErr) {
+                statusText = 'エラー'; statusClass = 'bg-red-100 text-red-700';
+            } else if (res.state === 'warn' || isShearNG) {
+                statusText = isShearNG ? 'せん断NG' : '注意'; 
+                statusClass = 'bg-yellow-100 text-yellow-700';
+                if(isShearNG) statusClass = 'bg-red-100 text-red-700 font-bold';
+            }
+
+            const makeOpts = (sel) => Object.keys(REBAR_AREAS).map(k => `<option value="${k}" ${k===sel?'selected':''}>${k}</option>`).join('');
+            
+            const val_sc = isErr ? '-' : Math.abs(res.sigma_c).toFixed(2);
+            const val_ss = isErr ? '-' : Math.abs(res.sigma_s).toFixed(1);
+            const val_sp = isErr ? '-' : Math.abs(res.sigma_sp).toFixed(1);
+            const val_x  = isErr ? '-' : res.x.toFixed(1);
+            
+            const val_tau = isErr ? '-' : Math.abs(res.tau).toFixed(3);
+            const val_fa  = isErr ? '-' : res.fa.toFixed(3);
+            const val_Ce  = isErr ? '-' : res.Ce.toFixed(2);
+            const val_Cpt = isErr ? '-' : res.Cpt.toFixed(2);
+            const val_tau_base = isErr ? '-' : res.tau_a1_base.toFixed(3);
+            const shearColor = isShearNG ? 'text-red-600 font-bold' : 'text-slate-800';
+            const Astr = res.As_total.toFixed(0);
+            const Asptr = res.Asp_total.toFixed(0);
+
+            // コピーボタン (idx > 0 のみ)
+            let copyBtn = '';
+            if (idx > 0) {
+                copyBtn = `<button onclick="copySection1(${idx})" class="ml-2 px-2 py-1 text-[10px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-slate-600 flex items-center gap-1 transition-colors no-print" title="断面1の形状・配筋をコピー"><i data-lucide="copy" class="w-3 h-3"></i> 断面1コピー</button>`;
+            }
+
+            return `
+            <div class="section-card bg-white rounded-lg shadow-sm border border-slate-200 p-4 flex flex-col gap-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <div class="flex items-center flex-1 min-w-0 mr-2">
+                        <input type="text" value="${s.name}" onchange="updateData(${idx}, 'name', this.value)" 
+                            class="font-bold text-slate-800 bg-transparent border-none focus:ring-0 p-0 w-full text-lg text-left">
+                        ${copyBtn}
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded font-bold whitespace-nowrap ${statusClass}">${statusText}</span>
+                </div>
+
+                <div class="h-[140px] bg-slate-50 rounded border border-slate-100 relative flex items-center justify-center overflow-hidden no-print">
+                     <div id="svg_section_${idx}" class="w-full h-full"></div>
+                </div>
+
+                <div class="space-y-3 text-sm">
+                    <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                         <div>
+                            <label class="text-[10px] font-bold text-slate-400 block uppercase">Fc (N/mm²)</label>
+                            <input type="number" value="${s.Fc}" onchange="updateData(${idx}, 'Fc', this.value)" class="w-full bg-transparent border-b border-slate-300 text-right font-mono text-xs focus:border-blue-500 outline-none">
+                         </div>
+                         <div>
+                            <label class="text-[10px] font-bold text-slate-400 block uppercase">検定</label>
+                            <select onchange="updateData(${idx}, 'loadType', this.value)" class="w-full bg-transparent border-b border-slate-300 text-right font-mono text-xs focus:border-blue-500 outline-none">
+                                <option value="Long" ${s.loadType==='Long'?'selected':''}>長期(L)</option>
+                                <option value="Short" ${s.loadType==='Short'?'selected':''}>短期(S)</option>
+                            </select>
+                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">幅 b (mm)</label>
+                            <input type="number" value="${s.b}" onchange="updateData(${idx}, 'b', this.value)" class="w-full border rounded px-2 py-1 bg-slate-50 text-right font-mono">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">全成 D (mm)</label>
+                            <input type="number" value="${s.D}" onchange="updateData(${idx}, 'D', this.value)" class="w-full border rounded px-2 py-1 bg-slate-50 text-right font-mono">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">引張 dt (mm)</label>
+                            <input type="number" value="${s.dt}" onchange="updateData(${idx}, 'dt', this.value)" class="w-full border rounded px-2 py-1 bg-slate-50 text-right font-mono">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">圧縮 dp (mm)</label>
+                            <input type="number" value="${s.dp}" onchange="updateData(${idx}, 'dp', this.value)" class="w-full border rounded px-2 py-1 bg-slate-50 text-right font-mono">
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-2">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1 input-label">引張鉄筋 (As: ${Astr}mm²)</label>
+                        <div class="flex gap-1">
+                            <select onchange="updateData(${idx}, 'barSizeT', this.value)" class="border rounded px-1 py-1 bg-slate-50 text-xs w-20 font-mono">
+                                ${makeOpts(s.barSizeT)}
+                            </select>
+                            <input type="number" value="${s.barCountT}" onchange="updateData(${idx}, 'barCountT', this.value)" class="border rounded px-1 py-1 w-12 text-center bg-slate-50 text-xs font-mono">
+                            <span class="text-xs self-center text-slate-500">本</span>
+                        </div>
+                    </div>
+                    <div class="">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1 input-label">圧縮鉄筋 (As': ${Asptr}mm²)</label>
+                        <div class="flex gap-1">
+                            <select onchange="updateData(${idx}, 'barSizeC', this.value)" class="border rounded px-1 py-1 bg-slate-50 text-xs w-20 font-mono">
+                                ${makeOpts(s.barSizeC)}
+                            </select>
+                            <input type="number" value="${s.barCountC}" onchange="updateData(${idx}, 'barCountC', this.value)" class="border rounded px-1 py-1 w-12 text-center bg-slate-50 text-xs font-mono">
+                            <span class="text-xs self-center text-slate-500">本</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-2 grid grid-cols-3 gap-2">
+                         <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">M (kN·m/m)</label>
+                            <input type="number" value="${s.M_kNm}" onchange="updateData(${idx}, 'M_kNm', this.value)" class="w-full border rounded px-1 py-1 bg-slate-50 text-right font-mono text-xs">
+                        </div>
+                         <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">S (kN/m)</label>
+                            <input type="number" value="${s.S_kN}" onchange="updateData(${idx}, 'S_kN', this.value)" class="w-full border rounded px-1 py-1 bg-slate-50 text-right font-mono text-xs">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 block input-label">N (kN/m)</label>
+                            <input type="number" value="${s.N_kN}" onchange="updateData(${idx}, 'N_kN', this.value)" class="w-full border rounded px-1 py-1 bg-slate-50 font-bold text-blue-700 text-right font-mono text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2 pt-2 border-t border-slate-100">
+                    <div class="h-[80px] bg-white rounded relative flex items-center justify-center overflow-visible">
+                        <div id="svg_stress_${idx}" class="w-full h-full"></div>
+                    </div>
+                </div>
+
+                <div class="mt-2 text-sm bg-slate-50 p-2 rounded space-y-2">
+                    <div>
+                        <div class="flex justify-between items-center text-xs text-slate-500 mb-1 border-b border-slate-200 pb-1">
+                            <span>曲げ応力度</span>
+                            <span>x = ${val_x} mm</span>
+                        </div>
+                        <div class="flex justify-between items-center text-blue-700 font-bold">
+                            <span class="text-xs font-normal">σc(圧)</span>
+                            <span>${val_sc} <span class="text-xs font-normal text-slate-400">N/mm²</span></span>
+                        </div>
+                        <div class="flex justify-between items-center text-red-600 font-bold">
+                            <span class="text-xs font-normal">σs(引)</span>
+                            <span>${val_ss} <span class="text-xs font-normal text-slate-400">N/mm²</span></span>
+                        </div>
+                         <div class="flex justify-between items-center text-green-600 font-bold">
+                            <span class="text-xs font-normal">σs'(圧)</span>
+                            <span>${val_sp} <span class="text-xs font-normal text-slate-400">N/mm²</span></span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200">
+                         <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                            <span>せん断の照査 <span class="text-[10px]">(補強筋なし)</span></span>
+                        </div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs text-slate-600">発生 τ</span>
+                            <span class="font-bold ${shearColor}">${val_tau} <span class="text-[10px] font-normal text-slate-400">N/mm²</span></span>
+                        </div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs text-slate-600">許容 fa</span>
+                            <span class="font-bold text-slate-700">${val_fa} <span class="text-[10px] font-normal text-slate-400">N/mm²</span></span>
+                        </div>
+                        <div class="flex justify-end flex-wrap gap-2 text-[10px] text-slate-400 font-mono leading-none">
+                            <span>τa1:${val_tau_base}</span>
+                            <span>Ce:${val_Ce}</span>
+                            <span>Cpt:${val_Cpt}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        function updateData(idx, key, value) {
+            let val = parseFloat(value);
+            if (key === 'name' || key === 'loadType' || key === 'barSizeT' || key === 'barSizeC') val = value;
+            if (typeof val === 'number' && isNaN(val)) val = 0;
+            sections[idx][key] = val;
+            renderAll();
+        }
+
+        // Draw functions same as before
+        function drawSectionDetail(elemId, s, res) {
+            const el = document.getElementById(elemId);
+            if(!el) return;
+            const W = 300, H = 140, padding = 15;
+            const scaleX = (W - padding*2) / s.b;
+            const scaleY = (H - padding*2) / s.D;
+            const scale = Math.min(scaleX, scaleY);
+            const drawW = s.b * scale;
+            const drawH = s.D * scale;
+            const originX = (W - drawW) / 2;
+            const originY = (H - drawH) / 2;
+            const getDia = (name) => parseInt(name.replace('D', '')) || 13;
+            const diaT = getDia(s.barSizeT), diaC = getDia(s.barSizeC);
+            const rT = Math.max(diaT * scale / 2, 2.5); 
+            const rC = Math.max(diaC * scale / 2, 2.5);
+            
+            const y_t = originY + drawH - s.dt * scale;
+            const circlesT = [];
+            const countT = Math.max(s.barCountT, 1);
+            const spanW = drawW * 0.8;
+            const startX = originX + (drawW - spanW) / 2;
+            if (countT === 1) circlesT.push(originX + drawW/2);
+            else { const step = spanW / (countT - 1); for(let i=0; i<countT; i++) circlesT.push(startX + step*i); }
+
+            const y_c = originY + s.dp * scale;
+            const circlesC = [];
+            const countC = Math.max(s.barCountC, 1);
+            if (countC === 1) circlesC.push(originX + drawW/2);
+            else { const step = spanW / (countC - 1); for(let i=0; i<countC; i++) circlesC.push(startX + step*i); }
+
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}">`;
+            svg += `<rect x="${originX}" y="${originY}" width="${drawW}" height="${drawH}" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>`;
+            circlesT.forEach(cx => svg += `<circle cx="${cx}" cy="${y_t}" r="${rT}" fill="#ef4444" stroke="white" stroke-width="0.5"/>`);
+            circlesC.forEach(cx => svg += `<circle cx="${cx}" cy="${y_c}" r="${rC}" fill="#22c55e" stroke="white" stroke-width="0.5"/>`);
+            svg += `<text x="${originX + drawW + 5}" y="${originY + drawH/2}" font-size="10" fill="#64748b" dominant-baseline="middle">D=${s.D}</text>`;
+            svg += `<text x="${originX + drawW/2}" y="${originY + drawH + 12}" font-size="10" fill="#64748b" text-anchor="middle">b=${s.b}</text>`;
+            svg += `</svg>`;
+            el.innerHTML = svg;
+        }
+
+        function drawStressDiagram(elemId, s, res) {
+            const el = document.getElementById(elemId);
+            if(!el) return;
+            if(res.state === 'error') { el.innerHTML = ''; return; }
+            const W = 300, H = 80;
+            const scale = (H - 10) / s.D; 
+            const centerX = W / 2, topY = 5;
+            const y_na = topY + res.x * scale;
+            const y_d = topY + res.d * scale;
+            const y_dp = topY + s.dp * scale;
+            const bottomY = topY + s.D * scale;
+            
+            const maxStress = Math.max(Math.abs(res.sigma_c), Math.abs(res.sigma_s)/15, 10);
+            const sScale = 100 / maxStress; 
+            const w_sc = Math.abs(res.sigma_c) * sScale;
+            const w_ss = Math.abs(res.sigma_s/15) * sScale; 
+            const w_sp = Math.abs(res.sigma_sp/15) * sScale;
+
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}">`;
+            svg += `<defs><marker id="arrow" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#94a3b8" /></marker></defs>`;
+            svg += `<line x1="${centerX}" y1="${topY}" x2="${centerX}" y2="${bottomY}" stroke="#cbd5e1" stroke-dasharray="2 2" />`;
+            svg += `<line x1="${centerX-20}" y1="${y_na}" x2="${centerX+20}" y2="${y_na}" stroke="#3b82f6" stroke-width="1" />`;
+            svg += `<text x="${centerX+25}" y="${y_na}" font-size="9" fill="#3b82f6" dominant-baseline="middle">N.A</text>`;
+            svg += `<path d="M ${centerX} ${y_na} L ${centerX - w_sc} ${topY} L ${centerX} ${topY} Z" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" />`;
+            svg += `<line x1="${centerX}" y1="${y_d}" x2="${centerX + w_ss}" y2="${y_d}" stroke="#ef4444" stroke-width="2" />`;
+            svg += `<path d="M ${centerX+w_ss-4} ${y_d-3} L ${centerX+w_ss} ${y_d} L ${centerX+w_ss-4} ${y_d+3}" fill="none" stroke="#ef4444" stroke-width="1.5"/>`;
+            svg += `<line x1="${centerX}" y1="${y_dp}" x2="${centerX - w_sp}" y2="${y_dp}" stroke="#22c55e" stroke-width="2" />`;
+            svg += `<path d="M ${centerX-w_sp+4} ${y_dp-3} L ${centerX-w_sp} ${y_dp} L ${centerX-w_sp+4} ${y_dp+3}" fill="none" stroke="#22c55e" stroke-width="1.5"/>`;
+            svg += `</svg>`;
+            el.innerHTML = svg;
+        }
+
+        function saveData() {
+            const data = JSON.stringify(sections, null, 2);
+            const blob = new Blob([data], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rc_sections_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+        }
+        function loadData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loaded = JSON.parse(e.target.result);
+                    if(Array.isArray(loaded) && loaded.length === 4) {
+                        sections = loaded;
+                        renderAll();
+                        alert("データを読み込みました");
+                    } else { alert("データ形式が正しくありません"); }
+                } catch(err) { alert("読み込みエラー: " + err); }
+            };
+            reader.readAsText(file);
+        }
+        function showLogicInfo() { document.getElementById('logic_modal').classList.remove('hidden'); }
+        window.onload = renderAll;
+
+    </script>
+</body>
+</html>
