@@ -61,30 +61,31 @@
         .print-only { display: none; }
 
         /* -------------------------------------------------------------------------
-           印刷設定 (A4縦1枚に4断面を2列2行で配置)
+           印刷設定 (A4縦1枚に4断面を1行4列で配置)
            ------------------------------------------------------------------------- */
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
+            @page { size: A4 portrait; margin: 5mm; } /* 余白を詰めて幅を確保 */
             
             html, body { 
-                width: 190mm; /* A4幅内 */
+                width: 200mm; /* 印刷可能領域 */
                 height: auto; 
                 margin: 0; padding: 0; 
                 background-color: white; 
-                font-size: 8pt;
+                font-size: 6pt; /* フォントサイズを縮小して収める */
                 font-family: "Helvetica", "Arial", sans-serif;
                 color: #000;
             }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             
-            /* レイアウトコンテナ: 2列2行 (幅1/2) */
+            /* レイアウトコンテナ: 1行4列 */
             .print-layout { 
                 display: grid; 
-                grid-template-columns: 1fr 1fr; 
-                grid-template-rows: auto auto;
-                gap: 5mm; 
+                grid-template-columns: repeat(4, 1fr); /* 4列等幅 */
+                grid-template-rows: auto;
+                gap: 2mm; 
                 width: 100%;
+                align-items: start;
             }
             
             /* 各断面カード */
@@ -92,22 +93,23 @@
                 width: 100% !important; 
                 min-width: 0 !important; 
                 max-width: none !important;
-                border: 2px solid #333; 
+                border: 1px solid #333; /* 枠線を細く */
                 box-shadow: none; 
                 margin: 0;
-                padding: 2mm !important;
+                padding: 1.5mm !important; /* パディング縮小 */
                 break-inside: avoid;
                 display: block; 
             }
 
             /* タイトル */
             .section-card input[type="text"] {
-                font-size: 10pt !important;
+                font-size: 8pt !important;
                 font-weight: 800 !important;
                 text-align: center !important;
-                border-bottom: 2px solid #000 !important;
-                margin-bottom: 2mm;
+                border-bottom: 1px solid #000 !important;
+                margin-bottom: 1mm;
                 color: #000 !important;
+                padding: 0 !important;
             }
 
             /* 入力グリッドをリスト形式に整理 */
@@ -118,8 +120,8 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                border-bottom: 1px dotted #ccc;
-                padding: 0.5mm 0;
+                border-bottom: 0.5px dotted #ccc;
+                padding: 0.2mm 0;
             }
             .section-card .grid > div:last-child {
                 border-bottom: none;
@@ -127,14 +129,14 @@
 
             /* 入力値のスタイル */
             .section-card label, .section-card span {
-                font-size: 7.5pt !important;
+                font-size: 5.5pt !important; /* ラベル文字サイズ縮小 */
                 color: #444 !important;
                 width: auto !important;
                 text-align: left !important;
             }
             .section-card input[type="number"], 
             .section-card select {
-                font-size: 8pt !important;
+                font-size: 6pt !important; /* 入力値文字サイズ縮小 */
                 text-align: right;
                 font-weight: bold;
                 height: auto !important;
@@ -149,35 +151,35 @@
             /* 図エリア */
             .h-\[120px\], .h-\[80px\] { 
                 height: auto !important;
-                aspect-ratio: 2/1; /* 少し高さを抑える */
-                border: 1px solid #ddd !important;
-                margin-bottom: 2mm;
+                aspect-ratio: 2/1; /* 比率を維持して幅に合わせて縮小 */
+                border: 0.5px solid #ddd !important;
+                margin-bottom: 1mm;
             }
             
             /* 見出し */
             .text-\[10px\].uppercase {
-                font-size: 8pt !important;
+                font-size: 6pt !important;
                 color: #000 !important;
                 font-weight: bold;
-                border-bottom: 1px solid #000 !important;
-                margin-top: 3mm;
-                margin-bottom: 1mm;
+                border-bottom: 0.5px solid #000 !important;
+                margin-top: 2mm;
+                margin-bottom: 0.5mm;
             }
 
             /* 結果テーブル調整 */
-            table { width: 100%; border-collapse: collapse; font-size: 7.5pt !important; margin-top: 1mm; }
-            th, td { border-bottom: 1px solid #ccc; padding: 1mm 0 !important; }
+            table { width: 100%; border-collapse: collapse; font-size: 5.5pt !important; margin-top: 1mm; }
+            th, td { border-bottom: 0.5px solid #ccc; padding: 0.5mm 0 !important; }
             
             /* 印刷時：Web用の許容値列を消す */
             .col-allow { display: none !important; }
             
             /* 印刷時：許容値専用テーブルのスタイル */
             .print-allow-table {
-                margin-top: 2mm;
-                border-top: 1px solid #000;
-                font-size: 7pt;
+                margin-top: 1mm;
+                border-top: 0.5px solid #000;
+                font-size: 5pt;
             }
-            .print-allow-table td { border: none !important; padding: 0.5mm 0 !important; }
+            .print-allow-table td { border: none !important; padding: 0.2mm 0 !important; }
 
             /* 背景色の無効化 */
             .bg-blue-50\/50, .bg-emerald-50\/50, .bg-slate-100 { background-color: transparent !important; border: none !important; }
@@ -241,16 +243,19 @@
                         <div class="text-center my-3 text-sm overflow-x-auto whitespace-nowrap">
                             <span class="math-expr">x<sup>3</sup> - 3Lx<sup>2</sup> - </span><div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div><span class="math-expr">[A<sub>s</sub>'(L-d<sub>p</sub>) + A<sub>s</sub>(L-d)] x + </span><div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div><span class="math-expr">[A<sub>s</sub>'d<sub>p</sub>(L-d<sub>p</sub>) + A<sub>s</sub>d(L-d)] = 0</span>
                         </div>
+
                         <p class="text-xs font-bold text-slate-700 mb-1 mt-4">【応力度の算定】</p>
                         <p class="text-xs mb-2">軸方向力のつり合い <span class="math-expr">N = C + C' - T</span> よりコンクリート応力を求め、比により鉄筋応力を求めます。</p>
                         <div class="text-center my-2 text-base">
                             <span class="math-expr">σ<sub class="math-normal">c</sub></span> = <div class="fraction"><span class="numerator"><span class="math-expr">N</span></span><span class="denominator"><div class="fraction"><span class="numerator"><span class="math-expr">bx</span></span><span class="denominator">2</span></div> + <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub>'</span>(<span class="math-expr">x-d<sub class="math-normal">p</sub></span>)</span><span class="denominator"><span class="math-expr">x</span></span></div> - <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub></span>(<span class="math-expr">d-x</span>)</span><span class="denominator"><span class="math-expr">x</span></span></div></span></div>
                         </div>
+
                         <div class="text-center my-2 text-base flex justify-center gap-8">
                             <span><span class="math-expr">σ<sub class="math-normal">s</sub></span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">d-x</span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
                             <span><span class="math-expr">σ<sub class="math-normal">s</sub>'</span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">x-d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
                         </div>
                     </div>
+
                     <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded block w-max mb-3">B. 純曲げ (<span class="math-expr">N ≈ 0</span>)</span>
                         <p class="text-xs font-bold text-slate-700 mb-1">【中立軸 <span class="math-expr">x</span> の算定】</p>
@@ -258,6 +263,7 @@
                         <div class="text-center my-3 text-sm">
                             <span class="math-expr">k</span> = <span class="sqrt"><span style="margin-left:2px;">2<span class="math-expr">n</span>(<span class="math-expr">p</span> + <span class="math-expr">p'</span><span class="fraction"><span class="numerator"><span class="math-expr">d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">d</span></span></span>) + (<span class="math-expr">n</span>(<span class="math-expr">p</span>+<span class="math-expr">p'</span>))<sup>2</sup></span></span> - <span class="math-expr">n</span>(<span class="math-expr">p</span>+<span class="math-expr">p'</span>)
                         </div>
+
                         <div class="text-center text-sm mb-3"><span class="math-expr">x = k ⋅ d</span></div>
                         <p class="text-xs font-bold text-slate-700 mb-1 mt-4">【応力度の算定】</p>
                         <p class="text-xs mb-2">中立軸に関する断面二次モーメント <span class="math-expr">I</span> を用いて求めます。</p>
@@ -352,9 +358,9 @@
             const As = As_total * width_ratio;
             const Asp = Asp_total * width_ratio;
             
-            const N_val = (s.N_kN / member_len_m) * 1000.0;     
+            const N_val = (s.N_kN / member_len_m) * 1000.0;      
             const M_val = (s.M_kNm / member_len_m) * 1000000.0; 
-            const S_val = (s.S_kN / member_len_m) * 1000.0;     
+            const S_val = (s.S_kN / member_len_m) * 1000.0;      
 
             const b = CALC_B;
 
