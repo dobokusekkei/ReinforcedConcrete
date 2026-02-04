@@ -61,17 +61,18 @@
         .print-only { display: none; }
 
         /* -------------------------------------------------------------------------
-           印刷設定 (A4縦1枚に4断面を1行4列で配置)
+           印刷設定 (A4縦1枚に4断面を1行4列で配置 - 修正版)
            ------------------------------------------------------------------------- */
         @media print {
-            @page { size: A4 portrait; margin: 5mm; } /* 余白を詰めて幅を確保 */
+            @page { size: A4 portrait; margin: 5mm; } 
             
             html, body { 
-                width: 200mm; /* 印刷可能領域 */
+                width: 200mm; 
                 height: auto; 
                 margin: 0; padding: 0; 
                 background-color: white; 
-                font-size: 6pt; /* フォントサイズを縮小して収める */
+                /* フォントサイズを少し大きく戻す */
+                font-size: 7.5pt;
                 font-family: "Helvetica", "Arial", sans-serif;
                 color: #000;
             }
@@ -81,7 +82,7 @@
             /* レイアウトコンテナ: 1行4列 */
             .print-layout { 
                 display: grid; 
-                grid-template-columns: repeat(4, 1fr); /* 4列等幅 */
+                grid-template-columns: repeat(4, 1fr); 
                 grid-template-rows: auto;
                 gap: 2mm; 
                 width: 100%;
@@ -90,53 +91,61 @@
             
             /* 各断面カード */
             .section-card { 
-                width: 100% !important; 
+                /* ★重要: 最小幅制限を解除して確実に縮小させる */
                 min-width: 0 !important; 
                 max-width: none !important;
-                border: 1px solid #333; /* 枠線を細く */
+                width: 100% !important;
+                
+                border: 1px solid #333; 
                 box-shadow: none; 
                 margin: 0;
-                padding: 1.5mm !important; /* パディング縮小 */
+                /* 余白を極限まで削る */
+                padding: 1mm !important; 
                 break-inside: avoid;
                 display: block; 
             }
 
             /* タイトル */
             .section-card input[type="text"] {
-                font-size: 8pt !important;
+                font-size: 9pt !important;
                 font-weight: 800 !important;
                 text-align: center !important;
                 border-bottom: 1px solid #000 !important;
                 margin-bottom: 1mm;
                 color: #000 !important;
                 padding: 0 !important;
+                height: auto !important;
             }
 
-            /* 入力グリッドをリスト形式に整理 */
+            /* 入力グリッドの無駄なパディングを除去 */
             .section-card .grid {
                 display: block !important;
+                gap: 0 !important;
             }
             .section-card .grid > div {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 border-bottom: 0.5px dotted #ccc;
-                padding: 0.2mm 0;
+                padding: 0 !important; /* 行間を詰める */
+                margin: 0 !important;
+                line-height: 1.1;
             }
             .section-card .grid > div:last-child {
                 border-bottom: none;
             }
 
-            /* 入力値のスタイル */
+            /* 入力値のスタイル調整 */
             .section-card label, .section-card span {
-                font-size: 5.5pt !important; /* ラベル文字サイズ縮小 */
-                color: #444 !important;
-                width: auto !important;
-                text-align: left !important;
+                font-size: 7pt !important;
+                color: #000 !important; /* 薄い色をやめて視認性向上 */
+                transform: scale(0.95); /* 少しだけ縮小して収まりよく */
+                transform-origin: left center;
+                white-space: nowrap;
             }
             .section-card input[type="number"], 
             .section-card select {
-                font-size: 6pt !important; /* 入力値文字サイズ縮小 */
+                font-size: 7.5pt !important;
                 text-align: right;
                 font-weight: bold;
                 height: auto !important;
@@ -145,30 +154,42 @@
                 background: transparent !important;
                 width: auto !important;
                 color: #000 !important;
+                transform: scale(0.95);
+                transform-origin: right center;
             }
             select::-ms-expand { display: none; }
+            
+            /* コンテナの余白除去 */
+            .space-y-2\.5 > :not([hidden]) ~ :not([hidden]),
+            .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 1mm !important; /* 上下余白を詰める */
+            }
+            .p-3 { padding: 0 !important; }
+            .gap-3 { gap: 1mm !important; }
+            .gap-2 { gap: 0 !important; }
 
             /* 図エリア */
             .h-\[120px\], .h-\[80px\] { 
                 height: auto !important;
-                aspect-ratio: 2/1; /* 比率を維持して幅に合わせて縮小 */
+                aspect-ratio: 2.2/1; /* 少し横長にして高さを抑える */
                 border: 0.5px solid #ddd !important;
                 margin-bottom: 1mm;
             }
             
             /* 見出し */
             .text-\[10px\].uppercase {
-                font-size: 6pt !important;
+                font-size: 7pt !important;
                 color: #000 !important;
                 font-weight: bold;
                 border-bottom: 0.5px solid #000 !important;
-                margin-top: 2mm;
+                margin-top: 1.5mm;
                 margin-bottom: 0.5mm;
+                padding: 0 !important;
             }
 
             /* 結果テーブル調整 */
-            table { width: 100%; border-collapse: collapse; font-size: 5.5pt !important; margin-top: 1mm; }
-            th, td { border-bottom: 0.5px solid #ccc; padding: 0.5mm 0 !important; }
+            table { width: 100%; border-collapse: collapse; font-size: 7pt !important; margin-top: 0.5mm; }
+            th, td { border-bottom: 0.5px solid #ccc; padding: 0 !important; line-height: 1.2; }
             
             /* 印刷時：Web用の許容値列を消す */
             .col-allow { display: none !important; }
@@ -177,12 +198,19 @@
             .print-allow-table {
                 margin-top: 1mm;
                 border-top: 0.5px solid #000;
-                font-size: 5pt;
+                font-size: 6.5pt;
+                line-height: 1.1;
             }
-            .print-allow-table td { border: none !important; padding: 0.2mm 0 !important; }
+            .print-allow-table td { border: none !important; padding: 0 !important; }
 
-            /* 背景色の無効化 */
-            .bg-blue-50\/50, .bg-emerald-50\/50, .bg-slate-100 { background-color: transparent !important; border: none !important; }
+            /* 背景色の無効化とパディング削除 */
+            .bg-blue-50\/50, .bg-emerald-50\/50, .bg-slate-100 { 
+                background-color: transparent !important; 
+                border: none !important; 
+                padding: 0 !important;
+            }
+            .rounded-lg { border-radius: 0 !important; border: none !important; }
+            .border-b { border-bottom-width: 0.5px !important; }
         }
     </style>
 </head>
