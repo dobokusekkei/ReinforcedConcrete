@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.4.0</title>
+    <title>RC断面計算（4断面一括）Ver.4.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -96,48 +96,50 @@
         .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
         .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* 印刷設定: A4縦に1行4列で配置 (Zoomアプローチ) */
+        /* --- 修正: 印刷設定の再構築 (コンテナ幅固定 + Body縮小) --- */
         @media print {
             @page { 
                 size: A4 portrait; 
                 margin: 5mm; 
             }
             
-            /* 1. スクロールとサイズ制限の完全解除（最重要） */
+            /* 1. スクロール・サイズ制限の完全解除（最重要） */
             html, body, main {
                 overflow: visible !important;
                 height: auto !important;
                 width: auto !important;
-                display: block !important;
-                background-color: white !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                display: block !important;
+                background-color: white !important;
             }
 
+            /* 2. 縮小（Zoom）による用紙合わせ */
+            body {
+                zoom: 0.60 !important; /* 全体を60%に縮小 */
+            }
+
+            /* 3. コンテナの強制横並び設定 */
+            #sections_container {
+                width: 1300px !important;       /* 4列が入る十分な幅を確保 */
+                display: flex !important;
+                flex-wrap: nowrap !important;   /* 折り返し禁止 */
+                justify-content: flex-start !important;
+                gap: 10px !important;
+                
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            /* 4. 余計なUIの非表示 */
             .no-print, header, .btn-tool, .shadow-sm, #help_modal { 
                 display: none !important; 
             }
 
-            /* 2. 強制的な縮小表示（Zoom） */
-            body { 
-                width: 1300px !important; /* 4列が並ぶのに十分な固定幅 */
-                zoom: 0.55 !important;    /* 55%に縮小 */
-            }
+            /* --- 以下、印刷時のスタイル調整（維持） --- */
 
-            /* 3. コンテナの横並び維持 */
-            #sections_container {
-                display: flex !important;       /* 横並び */
-                flex-wrap: nowrap !important;   /* 折り返しなし */
-                gap: 10px !important;
-                justify-content: flex-start !important;
-                
-                overflow: visible !important;   /* コンテナ自体も表示制限解除 */
-                width: auto !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-
-            /* カードのスタイル調整 */
+            /* カードスタイル */
             .section-card {
                 break-inside: avoid;
                 border: 1px solid #333 !important;
@@ -145,14 +147,11 @@
                 box-shadow: none !important;
                 margin: 0 !important;
                 padding: 1mm !important;
-                width: 100% !important;
-                min-width: 280px !important; /* 幅を確保 */
-                max-width: none !important;
+                width: 100% !important; /* 親コンテナ内で均等割り */
+                min-width: 0 !important;
                 background: white !important;
                 transform: none !important;
             }
-
-            /* --- 以下、装飾削除等の既存設定 --- */
 
             /* ヘッダー装飾削除 */
             .card-header {
@@ -165,42 +164,37 @@
                 font-size: 10pt !important;
                 font-weight: bold !important;
                 color: #000 !important;
-                border: none !important; /* 印刷時は枠線を消す */
+                border: none !important;
             }
 
             /* 要素間隔の圧縮 */
             .p-3 { padding: 0 !important; }
             .gap-2 { gap: 1mm !important; }
             
-            /* 印刷時は間隔を詰め直す */
+            /* 区切り線 */
             .section-separator { margin-top: 2mm !important; padding-top: 1mm !important; border-top-width: 0.5px !important; border-color: #000 !important; }
             .section-title { margin-bottom: 1mm !important; font-size: 9pt !important; color: #000 !important; }
             .space-y-3 { margin-top: 1mm !important; }
             .h-[100px] { height: 70px !important; }
 
-            /* 入力エリアの装飾削除 */
+            /* 入力エリア装飾削除 */
             .bg-blue-50, .bg-emerald-50, .bg-slate-50, .bg-white {
                 background-color: transparent !important;
                 border: none !important;
             }
-            
             .border-b { border-bottom-width: 0.5px !important; border-color: #ccc !important; }
             .border-t { border-top-width: 0.5px !important; border-color: #ccc !important; }
             
-            /* 文字色を黒に統一 */
+            /* 文字色統一 */
             .text-slate-500, .text-slate-600, .text-slate-700, .text-blue-600, .text-emerald-600, .text-red-500, .text-red-600, .text-green-600 {
                 color: #000 !important;
             }
             
-            /* 入力文字サイズ */
-            .input-bare, select {
-                font-size: 8pt !important;
-            }
-            .label-sm {
-                font-size: 7pt !important;
-            }
+            /* 文字サイズ */
+            .input-bare, select { font-size: 8pt !important; }
+            .label-sm { font-size: 7pt !important; }
             
-            /* 許容値列の表示切替 */
+            /* 表示制御 */
             .web-allow-col { display: none !important; }
             .print-allow-row { display: table-row !important; }
         }
@@ -247,7 +241,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.0</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.1</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
