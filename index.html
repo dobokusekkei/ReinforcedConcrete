@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.3.9</title>
+    <title>RC断面計算（4断面一括）Ver.4.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -96,55 +96,45 @@
         .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
         .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* 印刷設定: A4縦に1行4列で配置 */
+        /* 印刷設定: A4縦に1行4列で配置 (Zoomアプローチ) */
         @media print {
             @page { 
                 size: A4 portrait; 
                 margin: 5mm; 
             }
             
-            /* --- 修正: 強制的な縮小設定 --- */
-            body { 
-                background-color: white !important; 
-                font-size: 7pt;
-                
-                /* 強制レイアウト設定 */
-                width: 1200px !important;          /* 4列が並ぶのに十分な幅を固定 */
-                transform: scale(0.60) !important; /* 60%に縮小 */
-                transform-origin: 0 0 !important;  /* 左上を基準に縮小 */
-                
-                height: auto !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: visible !important;      /* コンテンツの切り捨てを防止 */
-            }
-            
-            /* mainタグの設定: bodyに合わせて表示領域を確保 */
-            main {
+            /* 1. スクロールとサイズ制限の完全解除（最重要） */
+            html, body, main {
                 overflow: visible !important;
-                display: block !important;
                 height: auto !important;
-                min-height: 0 !important;
-                padding: 0 !important;
+                width: auto !important;
+                display: block !important;
+                background-color: white !important;
                 margin: 0 !important;
-                width: 100% !important;
+                padding: 0 !important;
             }
 
             .no-print, header, .btn-tool, .shadow-sm, #help_modal { 
                 display: none !important; 
             }
 
-            /* メインレイアウト: 1行4列 */
+            /* 2. 強制的な縮小表示（Zoom） */
+            body { 
+                width: 1300px !important; /* 4列が並ぶのに十分な固定幅 */
+                zoom: 0.55 !important;    /* 55%に縮小 */
+            }
+
+            /* 3. コンテナの横並び維持 */
             #sections_container {
-                display: grid !important;
-                grid-template-columns: repeat(4, 1fr) !important;
-                gap: 2mm !important;
-                width: 100% !important;
+                display: flex !important;       /* 横並び */
+                flex-wrap: nowrap !important;   /* 折り返しなし */
+                gap: 10px !important;
+                justify-content: flex-start !important;
+                
+                overflow: visible !important;   /* コンテナ自体も表示制限解除 */
+                width: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                align-items: start;
-                /* flexの無効化 */
-                flex-wrap: nowrap !important;
             }
 
             /* カードのスタイル調整 */
@@ -156,12 +146,13 @@
                 margin: 0 !important;
                 padding: 1mm !important;
                 width: 100% !important;
-                min-width: 0 !important;
+                min-width: 280px !important; /* 幅を確保 */
                 max-width: none !important;
                 background: white !important;
-                /* transform解除（念のため） */
                 transform: none !important;
             }
+
+            /* --- 以下、装飾削除等の既存設定 --- */
 
             /* ヘッダー装飾削除 */
             .card-header {
@@ -171,7 +162,7 @@
                 margin-bottom: 2mm !important;
             }
             .card-header input {
-                font-size: 8pt !important;
+                font-size: 10pt !important;
                 font-weight: bold !important;
                 color: #000 !important;
                 border: none !important; /* 印刷時は枠線を消す */
@@ -183,7 +174,7 @@
             
             /* 印刷時は間隔を詰め直す */
             .section-separator { margin-top: 2mm !important; padding-top: 1mm !important; border-top-width: 0.5px !important; border-color: #000 !important; }
-            .section-title { margin-bottom: 1mm !important; font-size: 8pt !important; color: #000 !important; }
+            .section-title { margin-bottom: 1mm !important; font-size: 9pt !important; color: #000 !important; }
             .space-y-3 { margin-top: 1mm !important; }
             .h-[100px] { height: 70px !important; }
 
@@ -203,10 +194,10 @@
             
             /* 入力文字サイズ */
             .input-bare, select {
-                font-size: 7pt !important;
+                font-size: 8pt !important;
             }
             .label-sm {
-                font-size: 6.5pt !important;
+                font-size: 7pt !important;
             }
             
             /* 許容値列の表示切替 */
@@ -256,7 +247,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.3.9</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.0</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
