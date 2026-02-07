@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.4.1</title>
+    <title>RC断面計算（4断面一括）Ver.4.2</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -96,43 +96,49 @@
         .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
         .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* --- 修正: 印刷設定の再構築 (コンテナ幅固定 + Body縮小) --- */
+        /* --- 修正: 印刷設定の再構築 (Body幅固定 + Zoom縮小) --- */
         @media print {
+            /* 1. ページ設定 */
             @page { 
                 size: A4 portrait; 
                 margin: 5mm; 
             }
             
-            /* 1. スクロール・サイズ制限の完全解除（最重要） */
-            html, body, main {
+            /* 2. BodyとMainの幅を強制固定（最重要） */
+            html {
                 overflow: visible !important;
                 height: auto !important;
-                width: auto !important;
+            }
+
+            body, main {
+                width: 1200px !important; /* 4列を並べるための十分な幅 */
                 margin: 0 !important;
                 padding: 0 !important;
+                overflow: visible !important; /* はみ出しを許可 */
+                height: auto !important;
                 display: block !important;
                 background-color: white !important;
             }
 
-            /* 2. 縮小（Zoom）による用紙合わせ */
+            /* 3. Zoomによる縮小合わせ */
             body {
-                zoom: 0.60 !important; /* 全体を60%に縮小 */
+                zoom: 0.60 !important; /* 1200px * 0.6 = 720px (A4印字幅に収める) */
             }
 
-            /* 3. コンテナの強制横並び設定 */
+            /* 4. コンテナの設定 */
             #sections_container {
-                width: 1300px !important;       /* 4列が入る十分な幅を確保 */
+                width: 100% !important; /* 親(body)の1200pxに合わせる */
                 display: flex !important;
-                flex-wrap: nowrap !important;   /* 折り返し禁止 */
-                justify-content: flex-start !important;
-                gap: 10px !important;
+                flex-wrap: nowrap !important; /* 折り返し禁止 */
+                justify-content: space-between !important; /* 均等配置 */
+                gap: 5px !important;
                 
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: visible !important;
             }
 
-            /* 4. 余計なUIの非表示 */
+            /* 5. 不要な要素の非表示 */
             .no-print, header, .btn-tool, .shadow-sm, #help_modal { 
                 display: none !important; 
             }
@@ -147,8 +153,9 @@
                 box-shadow: none !important;
                 margin: 0 !important;
                 padding: 1mm !important;
-                width: 100% !important; /* 親コンテナ内で均等割り */
-                min-width: 0 !important;
+                /* 幅はFlexアイテムとして自動調整させる */
+                width: auto !important;
+                flex: 1 1 0 !important; /* 均等に伸縮 */
                 background: white !important;
                 transform: none !important;
             }
@@ -241,7 +248,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.1</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.2</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
