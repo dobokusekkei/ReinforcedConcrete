@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.5.3</title>
+    <title>RC断面計算（4断面一括）Ver.5.5</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -172,21 +172,21 @@
                 border: none !important;
                 font-weight: bold !important;
                 color: #000 !important;
-                font-size: 11pt !important; /* 修正: 断面名フォントサイズ拡大 */
+                font-size: 11pt !important;
             }
             
-            /* 修正: 全てのinput（鉄筋本数等を含む）のフォントサイズを10ptに */
+            /* 入力値のフォントサイズ: 10pt */
             .input-bare, input[type="number"] {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
-                font-size: 10pt !important; /* 修正: 8pt -> 10pt */
+                font-size: 10pt !important;
             }
 
             /* Select要素（鉄筋径など）の表示崩れ防止 */
             select {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
-                font-size: 10pt !important; /* 修正: 8pt -> 10pt */
+                font-size: 10pt !important;
                 /* 矢印を消して幅を確保 */
                 appearance: none !important;
                 -webkit-appearance: none !important;
@@ -197,6 +197,18 @@
                 text-align: right;
             }
             
+            /* タイトルフォントを11ptに */
+            .section-title {
+                margin-bottom: 1mm !important; 
+                font-size: 11pt !important; 
+                color: #000 !important; 
+            }
+            
+            /* 計算結果の発生応力数値を10ptに */
+            .result-value-print {
+                font-size: 10pt !important;
+            }
+
             /* 色調整 */
             .text-slate-500, .text-slate-600, .text-slate-700, .text-blue-600, .text-red-500, .text-green-600 {
                 color: #000 !important;
@@ -252,12 +264,12 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.3</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.5</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
             <button onclick="toggleHistory(true)" class="btn-secondary text-slate-600"><i data-lucide="history" class="w-4 h-4"></i> 更新履歴</button>
-            <button onclick="toggleHelp(true)" class="btn-secondary text-blue-600 bg-blue-50 border-blue-100 hover:bg-blue-100"><i data-lucide="help-circle" class="w-4 h-4"></i> ヘルプ・計算式</button>
+            <button onclick="toggleHelp(true)" class="btn-secondary text-slate-600"><i data-lucide="help-circle" class="w-4 h-4"></i> ヘルプ・計算式</button>
             <div class="h-6 w-px bg-slate-200 mx-1"></div>
             <button onclick="saveData()" class="btn-secondary"><i data-lucide="save" class="w-4 h-4"></i> 保存</button>
             <label class="btn-secondary cursor-pointer">
@@ -370,6 +382,36 @@
                         ※ C<sub>e</sub>, C<sub>pt</sub>: 補正係数 (0.7 ～ 1.5)<br>
                         ※ &alpha;: 割増係数
                     </p>
+
+                    <!-- 詳細算定表 -->
+                    <div class="mt-4 bg-slate-50 p-3 rounded border border-slate-200">
+                        <h5 class="font-bold text-slate-700 text-xs mb-2">■ せん断許容応力度の算定詳細</h5>
+                        
+                        <p class="text-xs font-bold mt-2 mb-1">(1) コンクリートの許容せん断応力度 <span class="math-text">&tau;<sub>a1</sub></span> (N/mm²)</p>
+                        <table class="w-full text-xs text-center border-collapse border border-slate-300 mb-2">
+                            <tr class="bg-slate-200"><th class="border border-slate-300 p-1">Fc</th><td>18</td><td>21</td><td>24</td><td>27</td><td>30</td><td>40</td><td>50</td></tr>
+                            <tr><th class="border border-slate-300 p-1"><span class="math-text">&tau;<sub>a1</sub></span></th><td>0.21</td><td>0.22</td><td>0.23</td><td>0.24</td><td>0.25</td><td>0.29</td><td>0.31</td></tr>
+                        </table>
+
+                        <!-- 修正: LaTeX記法をHTML数式表示に変更 -->
+                        <p class="text-xs font-bold mt-2 mb-1">(2) 部材高さによる補正係数 <span class="math-text">C<sub>e</sub></span></p>
+                        <div class="formula-box text-center py-2 my-1">
+                            <span class="math-text">C<sub>e</sub> = <sup style="font-size:0.7em">4</sup><span class="sqrt-symbol">&radic;</span><span class="sqrt-bar"><div class="fraction"><span class="numerator">1000</span><span class="denominator">d</span></div></span></span>
+                            <span class="text-xs text-slate-500 ml-2">(0.7 &le; <span class="math-text">C<sub>e</sub></span> &le; 1.5)</span>
+                        </div>
+                        <table class="w-full text-xs text-center border-collapse border border-slate-300 mb-2">
+                            <tr class="bg-slate-200"><th class="border border-slate-300 p-1">d (mm)</th><td>&le;300</td><td>1000</td><td>3000</td><td>&ge;5000</td></tr>
+                            <tr><th class="border border-slate-300 p-1"><span class="math-text">C<sub>e</sub></span></th><td>1.35</td><td>1.00</td><td>0.76</td><td>0.67</td></tr>
+                        </table>
+
+                        <!-- 修正: LaTeX記法をHTML数式表示に変更 -->
+                        <p class="text-xs font-bold mt-2 mb-1">(3) 引張鉄筋比による補正係数 <span class="math-text">C<sub>pt</sub></span></p>
+                        <div class="formula-box text-center py-2 my-1">
+                            <span class="math-text">C<sub>pt</sub> = <sup style="font-size:0.7em">3</sup><span class="sqrt-symbol">&radic;</span><span class="sqrt-bar">100 &sdot; p<sub>t</sub></span></span>
+                            <span class="text-xs text-slate-500 ml-2">(0.7 &le; <span class="math-text">C<sub>pt</sub></span> &le; 1.5)</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 ml-2 mb-2">※ <span class="math-text">p<sub>t</sub></span> は引張鉄筋比 (%) = <span class="math-text"><div class="fraction"><span class="numerator">A<sub>s</sub></span><span class="denominator">b &sdot; d</span></div> &times; 100</span></div>
+                    </div>
                 </section>
 
                 <!-- 3. ユーザーマニュアル（追加部分） -->
@@ -423,6 +465,21 @@
                 <button onclick="toggleHistory(false)" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="p-6 overflow-y-auto text-slate-700 text-sm leading-relaxed space-y-4">
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.5.5 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>ヘルプファイルの数式表示を改善（LaTeX記法廃止）</li>
+                        <li>配筋入力欄に引張鉄筋比(pt)の表示を追加</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.5.4 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>印刷時のタイトルフォント(11pt)と計算結果フォント(10pt)を調整</li>
+                        <li>ヘルプファイルにせん断応力度の算定表を追加</li>
+                        <li>ヘルプボタンの色を統一</li>
+                    </ul>
+                </div>
                 <div class="border-b border-slate-100 pb-4">
                     <h5 class="font-bold text-slate-800">Ver.5.3 (2026-02-07)</h5>
                     <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
@@ -551,7 +608,8 @@
                     tau: 0, fa: 0, Ce: 1, Cpt: 1, 
                     allow_sigC: 0, allow_sigS: 0, allow_tauA1_base: 0,
                     shearState: '', bendStateC: '', bendStateS: '',
-                    msg: '', As_per_meter: 0, Asp_per_meter: 0, d: 0
+                    msg: '', As_per_meter: 0, Asp_per_meter: 0, d: 0,
+                    ptPerc: 0
                 };
             }
 
@@ -593,10 +651,15 @@
                 tau: 0, fa: 0, Ce: 1, Cpt: 1, 
                 allow_sigC, allow_sigS, allow_tauA1_base,
                 shearState: 'ok', bendStateC: 'ok', bendStateS: 'ok',
-                state: 'ok', msg: '', As_per_meter, Asp_per_meter, d 
+                state: 'ok', msg: '', As_per_meter, Asp_per_meter, d,
+                ptPerc: 0
             };
 
             try {
+                // --- 修正: pt計算 ---
+                const pt = As / (b * d);
+                res.ptPerc = pt * 100;
+
                 const EPS_N = 1e-6 * Math.max(Math.abs(N_val), 1.0);
                 let x = null;
 
@@ -647,7 +710,7 @@
                 let ce_val = Math.pow(1000.0 / d, 0.25);
                 if (ce_val < 0.7) ce_val = 0.7; else if (ce_val > 1.5) ce_val = 1.5;
                 res.Ce = ce_val;
-                const pt = As / (b * d);
+                // const pt = As / (b * d); // 重複計算削除
                 let cpt_val = Math.pow(100.0 * pt, 1.0/3.0);
                 if (cpt_val < 0.7) cpt_val = 0.7; else if (cpt_val > 1.5) cpt_val = 1.5;
                 res.Cpt = cpt_val;
@@ -918,7 +981,8 @@
                                         </div>
                                     </div>
                                     <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
-                                        (${fmt(res.As_per_meter, 2)} mm²/m)
+                                        <!-- 修正: pt表示追加 -->
+                                        (${fmt(res.As_per_meter, 0)} mm²/m, pt:${fmt(res.ptPerc, 2)}%)
                                     </div>
                                 </div>
 
@@ -932,7 +996,7 @@
                                         </div>
                                     </div>
                                     <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
-                                        (${fmt(res.Asp_per_meter, 2)} mm²/m)
+                                        (${fmt(res.Asp_per_meter, 0)} mm²/m)
                                     </div>
                                 </div>
                             </div>
@@ -976,7 +1040,8 @@
                                     ${getStatus(res.bendStateC)}
                                 </div>
                                 <div class="flex justify-between px-1">
-                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-blue-600 text-xs">${fmt(res.sigma_c)}</span></div>
+                                    <!-- 修正: 印刷用クラス result-value-print を適用 -->
+                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-blue-600 text-xs result-value-print">${fmt(res.sigma_c)}</span></div>
                                     <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${fmt(res.allow_sigC, 1)}</span></div>
                                 </div>
                             </div>
@@ -988,7 +1053,8 @@
                                     ${getStatus(res.bendStateS)}
                                 </div>
                                 <div class="flex justify-between px-1">
-                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-red-600 text-xs">${fmt(res.sigma_s, 1)}</span></div>
+                                    <!-- 修正: 印刷用クラス result-value-print を適用 -->
+                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-red-600 text-xs result-value-print">${fmt(res.sigma_s, 1)}</span></div>
                                     <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${fmt(res.allow_sigS, 0)}</span></div>
                                 </div>
                             </div>
@@ -1000,7 +1066,8 @@
                                     ${getStatus(res.shearState)}
                                 </div>
                                 <div class="flex justify-between px-1">
-                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-slate-700 text-xs">${fmt(res.tau, 3)}</span></div>
+                                    <!-- 修正: 印刷用クラス result-value-print を適用 -->
+                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-slate-700 text-xs result-value-print">${fmt(res.tau, 3)}</span></div>
                                     <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${fmt(res.fa, 3)}</span></div>
                                 </div>
                                 ${shearDetail}
