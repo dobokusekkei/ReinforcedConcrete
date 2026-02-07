@@ -3,326 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.2.5</title>
+    <title>RC断面計算（4断面一括）Ver.3.7</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap');
         
+        :root {
+            --primary-color: #2563eb;
+            --border-color: #e2e8f0;
+            --bg-canvas: #f8fafc;
+        }
+
         body { 
-            font-family: 'Noto Sans JP', sans-serif; 
-            background-color: #f8fafc; 
-            color: #334155;
+            font-family: 'Inter', 'Noto Sans JP', sans-serif; 
+            background-color: var(--bg-canvas); 
+            color: #1e293b;
             -webkit-font-smoothing: antialiased;
         }
         
         .font-mono { font-family: 'Roboto Mono', monospace; }
 
-        /* カードのスタイル */
-        .section-card { 
-            min-width: 320px; 
-            max-width: 360px;
-            transition: all 0.2s ease;
+        /* --- CSS修正: @apply を削除し、標準CSSに書き換え --- */
+        
+        /* 入力フィールドのカスタマイズ */
+        .input-bare {
+            width: 100%;
+            background-color: transparent;
+            border-bottom: 1px solid #cbd5e1; /* slate-300 */
+            font-family: 'Roboto Mono', monospace;
+            padding: 1px 2px;
+            font-size: 13px;
+            text-align: right; 
+            transition: color 0.15s, border-color 0.15s, background-color 0.15s;
         }
-        .section-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        .input-bare:focus {
+            outline: none;
+            border-color: #3b82f6; /* blue-500 */
+            background-color: rgba(239, 246, 255, 0.5); /* blue-50/50 */
+        }
+        
+        /* ラベルのスタイル */
+        .label-sm {
+            font-size: 11px;
+            color: #64748b; /* slate-500 */
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        /* セクション見出しと区切り線 */
+        .section-separator {
+            margin-top: 1rem;      /* mt-4 */
+            padding-top: 0.5rem;   /* pt-2 */
+            border-top: 1px solid #cbd5e1; /* border-slate-300: 線を明確に */
+        }
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155; /* slate-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+            display: block;
+        }
+
+        /* 結果表示の行スタイル */
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            line-height: 1.25;
         }
 
         /* 数式表示用スタイル */
-        .math-expr { font-family: 'Times New Roman', serif; font-style: italic; }
+        .formula-box {
+            background-color: #f8fafc; /* slate-50 */
+            padding: 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Times New Roman', 'Noto Serif JP', serif;
+        }
+        .math-text { font-family: 'Times New Roman', serif; font-style: italic; }
         .math-normal { font-style: normal; }
         .fraction { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 4px; font-size: 0.95em; }
-        .numerator { border-bottom: 1px solid currentColor; padding: 0 2px; width: 100%; text-align: center; line-height: 1.1; }
-        .denominator { padding: 0 2px; width: 100%; text-align: center; line-height: 1.1; }
-        .sqrt { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; }
-        .sqrt:before { 
-            content: "\221A"; 
-            margin-right: 2px; 
-            margin-left: -9px; 
-            vertical-align: top; 
-            font-size: 1.0em; 
-            position: relative; 
-            top: -1px;
-            display: inline-block;
-        }
+        .numerator { border-bottom: 1px solid currentColor; padding: 0 2px; width: 100%; text-align: center; line-height: 1.2; }
+        .denominator { padding: 0 2px; width: 100%; text-align: center; line-height: 1.2; }
+        .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
+        .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* 入力フォーム */
-        input[type="number"], select, input[type="text"] {
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        input[type="number"]:focus, select:focus, input[type="text"]:focus {
-            outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-        }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
-        /* 印刷専用クラス */
-        .print-only { display: none; }
-
-        /* -------------------------------------------------------------------------
-           印刷設定 (A4縦1枚に4断面を1行4列で配置 - 修正版)
-           ------------------------------------------------------------------------- */
+        /* 印刷設定: A4縦に1行4列で配置 */
         @media print {
-            @page { size: A4 portrait; margin: 5mm; } 
-            
-            html, body { 
-                width: 200mm; 
-                height: auto; 
-                margin: 0; padding: 0; 
-                background-color: white; 
-                /* フォントサイズを少し大きく戻す */
-                font-size: 7.5pt;
-                font-family: "Helvetica", "Arial", sans-serif;
-                color: #000;
+            @page { 
+                size: A4 portrait; 
+                margin: 5mm; 
             }
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
             
-            /* レイアウトコンテナ: 1行4列 */
-            .print-layout { 
-                display: grid; 
-                grid-template-columns: repeat(4, 1fr); 
-                grid-template-rows: auto;
-                gap: 2mm; 
-                width: 100%;
+            body { 
+                background-color: white; 
+                font-size: 7pt;
+                width: 200mm; 
+                height: auto;
+            }
+
+            .no-print, header, .btn-tool, .shadow-sm, #help_modal { 
+                display: none !important; 
+            }
+
+            /* メインレイアウト: 1行4列 */
+            #sections_container {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 2mm !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 align-items: start;
             }
-            
-            /* 各断面カード */
-            .section-card { 
-                /* ★重要: 最小幅制限を解除して確実に縮小させる */
-                min-width: 0 !important; 
-                max-width: none !important;
-                width: 100% !important;
-                
-                border: 1px solid #333; 
-                box-shadow: none; 
-                margin: 0;
-                /* 余白を極限まで削る */
-                padding: 1mm !important; 
+
+            /* カードのスタイル調整 */
+            .section-card {
                 break-inside: avoid;
-                display: block; 
-            }
-
-            /* タイトル */
-            .section-card input[type="text"] {
-                font-size: 9pt !important;
-                font-weight: 800 !important;
-                text-align: center !important;
-                border-bottom: 1px solid #000 !important;
-                margin-bottom: 1mm;
-                color: #000 !important;
-                padding: 0 !important;
-                height: auto !important;
-            }
-
-            /* 入力グリッドの無駄なパディングを除去 */
-            .section-card .grid {
-                display: block !important;
-                gap: 0 !important;
-            }
-            .section-card .grid > div {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 0.5px dotted #ccc;
-                padding: 0 !important; /* 行間を詰める */
+                border: 1px solid #333 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
                 margin: 0 !important;
-                line-height: 1.1;
-            }
-            .section-card .grid > div:last-child {
-                border-bottom: none;
+                padding: 1mm !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                background: white !important;
             }
 
-            /* 入力値のスタイル調整 */
-            .section-card label, .section-card span {
-                font-size: 7pt !important;
-                color: #000 !important; /* 薄い色をやめて視認性向上 */
-                transform: scale(0.95); /* 少しだけ縮小して収まりよく */
-                transform-origin: left center;
-                white-space: nowrap;
+            /* ヘッダー装飾削除 */
+            .card-header {
+                background: none !important;
+                border-bottom: 1px solid #000 !important;
+                padding: 1mm 0 !important;
+                margin-bottom: 2mm !important;
             }
-            .section-card input[type="number"], 
-            .section-card select {
-                font-size: 7.5pt !important;
-                text-align: right;
-                font-weight: bold;
-                height: auto !important;
-                padding: 0 !important;
-                border: none !important;
-                background: transparent !important;
-                width: auto !important;
+            .card-header input {
+                font-size: 8pt !important;
+                font-weight: bold !important;
                 color: #000 !important;
-                transform: scale(0.95);
-                transform-origin: right center;
+                border: none !important; /* 印刷時は枠線を消す */
             }
-            select::-ms-expand { display: none; }
-            
-            /* コンテナの余白除去 */
-            .space-y-2\.5 > :not([hidden]) ~ :not([hidden]),
-            .space-y-2 > :not([hidden]) ~ :not([hidden]) {
-                margin-top: 1mm !important; /* 上下余白を詰める */
-            }
+
+            /* 要素間隔の圧縮 */
             .p-3 { padding: 0 !important; }
-            .gap-3 { gap: 1mm !important; }
-            .gap-2 { gap: 0 !important; }
+            .gap-2 { gap: 1mm !important; }
+            
+            /* 印刷時は間隔を詰め直す */
+            .section-separator { margin-top: 2mm !important; padding-top: 1mm !important; border-top-width: 0.5px !important; border-color: #000 !important; }
+            .section-title { margin-bottom: 1mm !important; font-size: 8pt !important; color: #000 !important; }
+            .space-y-3 { margin-top: 1mm !important; }
+            .h-[100px] { height: 70px !important; }
 
-            /* 図エリア */
-            .h-\[120px\], .h-\[80px\] { 
-                height: auto !important;
-                aspect-ratio: 2.2/1; /* 少し横長にして高さを抑える */
-                border: 0.5px solid #ddd !important;
-                margin-bottom: 1mm;
+            /* 入力エリアの装飾削除 */
+            .bg-blue-50, .bg-emerald-50, .bg-slate-50, .bg-white {
+                background-color: transparent !important;
+                border: none !important;
             }
             
-            /* 見出し */
-            .text-\[10px\].uppercase {
-                font-size: 7pt !important;
+            .border-b { border-bottom-width: 0.5px !important; border-color: #ccc !important; }
+            .border-t { border-top-width: 0.5px !important; border-color: #ccc !important; }
+            
+            /* 文字色を黒に統一 */
+            .text-slate-500, .text-slate-600, .text-slate-700, .text-blue-600, .text-emerald-600, .text-red-500, .text-red-600, .text-green-600 {
                 color: #000 !important;
-                font-weight: bold;
-                border-bottom: 0.5px solid #000 !important;
-                margin-top: 1.5mm;
-                margin-bottom: 0.5mm;
-                padding: 0 !important;
             }
-
-            /* 結果テーブル調整 */
-            table { width: 100%; border-collapse: collapse; font-size: 7pt !important; margin-top: 0.5mm; }
-            th, td { border-bottom: 0.5px solid #ccc; padding: 0 !important; line-height: 1.2; }
             
-            /* 印刷時：Web用の許容値列を消す */
-            .col-allow { display: none !important; }
+            /* 入力文字サイズ */
+            .input-bare, select {
+                font-size: 7pt !important;
+            }
+            .label-sm {
+                font-size: 6.5pt !important;
+            }
             
-            /* 印刷時：許容値専用テーブルのスタイル */
-            .print-allow-table {
-                margin-top: 1mm;
-                border-top: 0.5px solid #000;
-                font-size: 6.5pt;
-                line-height: 1.1;
-            }
-            .print-allow-table td { border: none !important; padding: 0 !important; }
-
-            /* 背景色の無効化とパディング削除 */
-            .bg-blue-50\/50, .bg-emerald-50\/50, .bg-slate-100 { 
-                background-color: transparent !important; 
-                border: none !important; 
-                padding: 0 !important;
-            }
-            .rounded-lg { border-radius: 0 !important; border: none !important; }
-            .border-b { border-bottom-width: 0.5px !important; }
+            /* 許容値列の表示切替 */
+            .web-allow-col { display: none !important; }
+            .print-allow-row { display: table-row !important; }
         }
+
+        /* 画面表示用のカードスタイル */
+        .section-card {
+            width: 230px; /* 少し幅を広げてゆとりを持たせる */
+            flex-shrink: 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* ボタンスタイル（@apply代替） */
+        .btn-secondary {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem; font-weight: 500;
+            color: #475569; background-color: white;
+            border: 1px solid #e2e8f0; border-radius: 0.375rem;
+            transition: all 0.15s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .btn-secondary:hover { background-color: #f8fafc; color: #2563eb; }
+        
+        .btn-primary {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem; font-weight: 700;
+            color: white; background-color: #2563eb;
+            border-radius: 0.375rem;
+            transition: all 0.15s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .btn-primary:hover { background-color: #1d4ed8; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
-<body class="text-slate-800 bg-slate-100">
+<body>
 
     <!-- ヘッダー -->
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-4 no-print shadow-sm">
-        <div class="flex items-center gap-2">
-            <div class="p-1.5 bg-blue-600 rounded text-white"><i data-lucide="calculator" class="w-5 h-5"></i></div>
-            <h1 class="text-base font-bold text-slate-800">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1">Ver.2.5 (道路土工準拠)</span></h1>
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm no-print">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-blue-600 rounded-lg text-white shadow-md">
+                <i data-lucide="calculator" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.3.7</span></h1>
+            </div>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="showLogicInfo()" class="btn-tool"><i data-lucide="help-circle" class="w-4 h-4"></i> 解説</button>
-            <div class="h-4 w-px bg-slate-300 mx-1"></div>
-            <button onclick="saveData()" class="btn-tool"><i data-lucide="save" class="w-4 h-4"></i> 保存</button>
-            <label class="btn-tool cursor-pointer"><i data-lucide="upload" class="w-4 h-4"></i> 読込<input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadData(this)"></label>
+        <div class="flex items-center gap-3">
+            <button onclick="toggleHelp(true)" class="btn-secondary text-blue-600 bg-blue-50 border-blue-100 hover:bg-blue-100"><i data-lucide="help-circle" class="w-4 h-4"></i> ヘルプ・計算式</button>
+            <div class="h-6 w-px bg-slate-200 mx-1"></div>
+            <button onclick="saveData()" class="btn-secondary"><i data-lucide="save" class="w-4 h-4"></i> 保存</button>
+            <label class="btn-secondary cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4"></i> 読込
+                <input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadData(this)">
+            </label>
             <button onclick="window.print()" class="btn-primary"><i data-lucide="printer" class="w-4 h-4"></i> 印刷</button>
         </div>
     </header>
-    <style>
-        .btn-tool { @apply flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded transition; }
-        .btn-primary { @apply flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded transition shadow-sm; }
-    </style>
 
     <!-- メインコンテンツ -->
-    <main class="p-4 overflow-x-auto min-h-screen">
-        <div class="print-layout flex gap-4 pb-12 mx-auto" id="sections_container" style="width: max-content;">
+    <main class="p-6 overflow-x-auto min-h-[calc(100vh-80px)]">
+        <!-- Flex Container: 画面では横並び、印刷ではGrid(1行4列) -->
+        <div id="sections_container" class="flex flex-wrap gap-4 justify-center items-start mx-auto w-full">
             <!-- JSでカードを描画 -->
         </div>
     </main>
 
-    <!-- ヘルプモーダル (変更なし) -->
-    <div id="logic_modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity opacity-0" style="transition: opacity 0.2s;">
-        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
-            <!-- (Content omitted for brevity as per instruction not to change logic/help) -->
-            <div class="px-5 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
-                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i data-lucide="book-open" class="w-4 h-4 text-blue-600"></i> 計算ロジック・公式</h3>
-                <button onclick="toggleModal(false)" class="p-1 hover:bg-slate-200 rounded-full text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <!-- ヘルプモーダル -->
+    <div id="help_modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i> 計算式・ユーザーマニュアル</h3>
+                <button onclick="toggleHelp(false)" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-6 text-sm text-slate-600 leading-relaxed space-y-6">
-                <!-- 1. 基礎理論 -->
+            <div class="p-8 overflow-y-auto text-slate-700 text-sm leading-relaxed space-y-8">
+                
+                <!-- 1. 曲げ応力度 -->
                 <section>
-                    <h4 class="font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-3 text-base">1. 基礎理論 (平面保持の仮定)</h4>
-                    <p class="mb-2 text-xs">鉄筋コンクリートの曲げ解析において、以下の仮定に基づき計算を行います。</p>
-                    <ul class="list-disc pl-5 space-y-1 text-xs mb-3">
-                        <li><strong>平面保持:</strong> 変形前の平面断面は、変形後も平面を保つ（ひずみ分布は直線）。</li>
-                        <li><strong>線形弾性:</strong> コンクリートおよび鉄筋の応力はひずみに比例する（フックの法則）。</li>
-                        <li><strong>引張無視:</strong> 引張側のコンクリート応力は無視する。</li>
-                    </ul>
-                </section>
-                <!-- 2. 曲げ応力度 -->
-                <section>
-                    <h4 class="font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-3 text-base">2. 曲げ応力度 (Elastic Theory)</h4>
-                    <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded block w-max mb-3">A. 軸力あり (<span class="math-expr">N ≠ 0</span>)</span>
-                        <p class="text-xs font-bold text-slate-700 mb-1">【中立軸 <span class="math-expr">x</span> の算定】</p>
-                        <p class="text-xs mb-2">圧縮縁から荷重作用点までの距離 <span class="math-expr">L = D/2 - e</span> （<span class="math-expr">e = M/N</span>）を用いて、モーメントつり合いより導かれる3次方程式を解きます。</p>
-                        <div class="text-center my-3 text-sm overflow-x-auto whitespace-nowrap">
-                            <span class="math-expr">x<sup>3</sup> - 3Lx<sup>2</sup> - </span><div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div><span class="math-expr">[A<sub>s</sub>'(L-d<sub>p</sub>) + A<sub>s</sub>(L-d)] x + </span><div class="fraction"><span class="numerator"><span class="math-expr">6n</span></span><span class="denominator"><span class="math-expr">b</span></span></div><span class="math-expr">[A<sub>s</sub>'d<sub>p</sub>(L-d<sub>p</sub>) + A<sub>s</sub>d(L-d)] = 0</span>
+                    <h4 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-4">1. 曲げ応力度 (Bending Stress)</h4>
+                    
+                    <div class="space-y-6">
+                        <!-- 軸力あり -->
+                        <div>
+                            <h5 class="font-bold text-slate-700 border-b border-slate-300 pb-1 mb-2">A. 軸力がある場合 (<span class="math-text">N &ne; 0</span>)</h5>
+                            <p class="text-xs mb-2">中立軸 <span class="math-text">x</span> は、以下の3次方程式の解として求められます。</p>
+                            
+                            <div class="formula-box text-center">
+                                <span class="math-text">x<sup>3</sup> - 3L x<sup>2</sup> - <div class="fraction"><span class="numerator">6n</span><span class="denominator">b</span></div> [A'<sub>s</sub>(L-d<sub>p</sub>) + A<sub>s</sub>(L-d)] x + <div class="fraction"><span class="numerator">6n</span><span class="denominator">b</span></div> [A'<sub>s</sub>d<sub>p</sub>(L-d<sub>p</sub>) + A<sub>s</sub>d(L-d)] = 0</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 text-center mb-4">ここで、<span class="math-text">L = h/2 - e</span>, <span class="math-text">e = M/N</span></p>
+
+                            <p class="text-xs mb-2">各応力度は以下の釣り合い式より算出します。</p>
+                            <div class="formula-box grid gap-4">
+                                <div class="text-center">
+                                    <span class="text-xs font-bold mr-2">コンクリート圧縮:</span>
+                                    <span class="math-text">&sigma;<sub>c</sub> = <div class="fraction"><span class="numerator">N</span><span class="denominator"><div class="fraction"><span class="numerator">bx</span><span class="denominator">2</span></div> + <div class="fraction"><span class="numerator">n A'<sub>s</sub>(x-d<sub>p</sub>)</span><span class="denominator">x</span></div> - <div class="fraction"><span class="numerator">n A<sub>s</sub>(d-x)</span><span class="denominator">x</span></div></span></div></span>
+                                </div>
+                                <div class="flex justify-center gap-8">
+                                    <div>
+                                        <span class="text-xs font-bold mr-2">鉄筋引張:</span>
+                                        <span class="math-text">&sigma;<sub>s</sub> = n &sigma;<sub>c</sub> <div class="fraction"><span class="numerator">d-x</span><span class="denominator">x</span></div></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs font-bold mr-2">鉄筋圧縮:</span>
+                                        <span class="math-text">&sigma;'<sub>s</sub> = n &sigma;<sub>c</sub> <div class="fraction"><span class="numerator">x-d<sub>p</sub></span><span class="denominator">x</span></div></span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <p class="text-xs font-bold text-slate-700 mb-1 mt-4">【応力度の算定】</p>
-                        <p class="text-xs mb-2">軸方向力のつり合い <span class="math-expr">N = C + C' - T</span> よりコンクリート応力を求め、比により鉄筋応力を求めます。</p>
-                        <div class="text-center my-2 text-base">
-                            <span class="math-expr">σ<sub class="math-normal">c</sub></span> = <div class="fraction"><span class="numerator"><span class="math-expr">N</span></span><span class="denominator"><div class="fraction"><span class="numerator"><span class="math-expr">bx</span></span><span class="denominator">2</span></div> + <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub>'</span>(<span class="math-expr">x-d<sub class="math-normal">p</sub></span>)</span><span class="denominator"><span class="math-expr">x</span></span></div> - <div class="fraction"><span class="numerator"><span class="math-expr">nA<sub>s</sub></span>(<span class="math-expr">d-x</span>)</span><span class="denominator"><span class="math-expr">x</span></span></div></span></div>
-                        </div>
+                        <!-- 純曲げ -->
+                        <div>
+                            <h5 class="font-bold text-slate-700 border-b border-slate-300 pb-1 mb-2">B. 純曲げの場合 (<span class="math-text">N &approx; 0</span>)</h5>
+                            <p class="text-xs mb-2">中立軸比 <span class="math-text">k = x/d</span> は以下の式より求めます。</p>
+                            
+                            <div class="formula-box text-center">
+                                <span class="math-text">k = <span class="sqrt-symbol">&radic;</span><span class="sqrt-bar">2n(p + p'<div class="fraction"><span class="numerator">d<sub>p</sub></span><span class="denominator">d</span></div>) + (n(p+p'))<sup>2</sup></span> - n(p+p')</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 text-center mb-4"><span class="math-text">p = A<sub>s</sub> / bd</span> , <span class="math-text">p' = A'<sub>s</sub> / bd</span></p>
 
-                        <div class="text-center my-2 text-base flex justify-center gap-8">
-                            <span><span class="math-expr">σ<sub class="math-normal">s</sub></span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">d-x</span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
-                            <span><span class="math-expr">σ<sub class="math-normal">s</sub>'</span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">x-d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded block w-max mb-3">B. 純曲げ (<span class="math-expr">N ≈ 0</span>)</span>
-                        <p class="text-xs font-bold text-slate-700 mb-1">【中立軸 <span class="math-expr">x</span> の算定】</p>
-                        <p class="text-xs mb-2">断面一次モーメントのつり合いより導かれる2次方程式を解きます。一般に中立軸比 <span class="math-expr">k = x/d</span> は以下の通りです。</p>
-                        <div class="text-center my-3 text-sm">
-                            <span class="math-expr">k</span> = <span class="sqrt"><span style="margin-left:2px;">2<span class="math-expr">n</span>(<span class="math-expr">p</span> + <span class="math-expr">p'</span><span class="fraction"><span class="numerator"><span class="math-expr">d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">d</span></span></span>) + (<span class="math-expr">n</span>(<span class="math-expr">p</span>+<span class="math-expr">p'</span>))<sup>2</sup></span></span> - <span class="math-expr">n</span>(<span class="math-expr">p</span>+<span class="math-expr">p'</span>)
-                        </div>
-
-                        <div class="text-center text-sm mb-3"><span class="math-expr">x = k ⋅ d</span></div>
-                        <p class="text-xs font-bold text-slate-700 mb-1 mt-4">【応力度の算定】</p>
-                        <p class="text-xs mb-2">中立軸に関する断面二次モーメント <span class="math-expr">I</span> を用いて求めます。</p>
-                        <div class="text-center text-sm mb-2"><span class="math-expr">I</span> = <div class="fraction"><span class="numerator"><span class="math-expr">bx<sup>3</sup></span></span><span class="denominator">3</span></div> + <span class="math-expr">nA<sub>s</sub>(d-x)<sup>2</sup></span> + <span class="math-expr">nA<sub>s</sub>'(x-d<sub>p</sub>)<sup>2</sup></span></div>
-                        <div class="text-center text-base"><span class="math-expr">σ<sub class="math-normal">c</sub></span> = <div class="fraction"><span class="numerator"><span class="math-expr">M</span></span><span class="denominator"><span class="math-expr">I</span></span></div> <span class="math-expr">x</span></div>
-                        <div class="text-center my-2 text-base flex justify-center gap-8">
-                            <span><span class="math-expr">σ<sub class="math-normal">s</sub></span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">d-x</span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
-                            <span><span class="math-expr">σ<sub class="math-normal">s</sub>'</span> = <span class="math-expr">n σ<sub class="math-normal">c</sub></span> <div class="fraction"><span class="numerator"><span class="math-expr">x-d<sub class="math-normal">p</sub></span></span><span class="denominator"><span class="math-expr">x</span></span></div></span>
-                        </div>
-                    </div>
-                </section>
-                <!-- 3. せん断 -->
-                <section>
-                    <h4 class="font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-3 text-base">3. せん断応力度 (道路土工指針)</h4>
-                    <div class="bg-emerald-50 p-4 rounded border border-emerald-100 flex flex-col gap-3">
-                        <div class="flex items-center gap-4">
-                            <div class="text-sm font-bold w-24">発生応力度:</div>
-                            <div class="text-base math-expr">τ = <div class="fraction"><span class="numerator">S</span><span class="denominator">b ⋅ d</span></div></div>
-                            <div class="text-xs text-slate-500">※平均せん断応力度</div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="text-sm font-bold w-24">許容応力度:</div>
-                            <div class="text-base math-expr">f<sub class="math-normal">a</sub> = τ<sub class="math-normal">a1</sub> ⋅ C<sub class="math-normal">e</sub> ⋅ C<sub class="math-normal">pt</sub> ⋅ α</div>
+                            <p class="text-xs mb-2">応力度は以下の式より算出します。</p>
+                            <div class="formula-box grid gap-4">
+                                <div class="flex justify-center gap-8">
+                                    <div>
+                                        <span class="text-xs font-bold mr-2">コンクリート:</span>
+                                        <span class="math-text">&sigma;<sub>c</sub> = <div class="fraction"><span class="numerator">M</span><span class="denominator"><div class="fraction"><span class="numerator">1</span><span class="denominator">2</span></div> b d<sup>2</sup> k j</span></div></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs font-bold mr-2">鉄筋引張:</span>
+                                        <span class="math-text">&sigma;<sub>s</sub> = <div class="fraction"><span class="numerator">M</span><span class="denominator">A<sub>s</sub> j d</span></div></span>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-xs font-bold mr-2">鉄筋圧縮:</span>
+                                    <span class="math-text">&sigma;'<sub>s</sub> = n &sigma;<sub>c</sub> <div class="fraction"><span class="numerator">x-d<sub>p</sub></span><span class="denominator">x</span></div></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
+
+                <!-- 2. せん断応力度 -->
+                <section>
+                    <h4 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-4">2. せん断応力度 (Shear Stress)</h4>
+                    <div class="formula-box">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="flex items-center gap-4">
+                                <span class="text-xs font-bold">発生値:</span>
+                                <span class="math-text text-lg">&tau; = <div class="fraction"><span class="numerator">S</span><span class="denominator">b d</span></div></span>
+                            </div>
+                            <div class="flex items-center gap-4 border-t border-slate-300 pt-4 w-full justify-center">
+                                <span class="text-xs font-bold">許容値:</span>
+                                <span class="math-text text-lg">f<sub>a</sub> = &tau;<sub>a1</sub> &sdot; C<sub>e</sub> &sdot; C<sub>pt</sub> &sdot; &alpha;</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 ml-2">
+                        ※ &tau;<sub>a1</sub>: コンクリート強度による基本値<br>
+                        ※ C<sub>e</sub>, C<sub>pt</sub>: 補正係数 (0.7 ～ 1.5)<br>
+                        ※ &alpha;: 割増係数
+                    </p>
+                </section>
+
+                <!-- 3. ユーザーマニュアル（追加部分） -->
+                <section>
+                    <h4 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-4">3. ユーザーマニュアル (User Manual)</h4>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <h5 class="font-bold text-slate-700 text-sm mb-1">■ 基本的な使い方</h5>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                このツールは4つの断面について同時にRC（鉄筋コンクリート）断面計算を行い、応力度と許容値を比較します。<br>
+                                入力値を変更すると、即座に計算結果が再計算され、右側の図と下部の結果欄に反映されます。<br>
+                                計算結果が許容値を超えると<span class="text-red-600 font-bold bg-red-100 px-1 rounded">NG</span>、範囲内であれば<span class="text-blue-600 font-bold bg-blue-100 px-1 rounded">OK</span>と表示されます。
+                            </p>
+                        </div>
+
+                        <div>
+                            <h5 class="font-bold text-slate-700 text-sm mb-1">■ 入力項目について</h5>
+                            <ul class="list-disc list-inside text-xs text-slate-600 leading-relaxed pl-2 space-y-1">
+                                <li><strong>材料条件:</strong> コンクリート強度(Fc)や鉄筋種別を選択します。許容応力度やヤング係数比(n)は自動設定されますが、任意の値に書き換えることも可能です。割増係数(α)は短期荷重時などに変更してください。</li>
+                                <li><strong>断面形状:</strong> 部材の幅(b)、高さ(h)、引張鉄筋中心までの距離(dt)、圧縮鉄筋中心までの距離(dp)をミリメートル単位で入力します。</li>
+                                <li><strong>配筋:</strong> 鉄筋径と本数を選択・入力します。「As」は引張側、「As'」は圧縮側です。括弧内の数値は1メートルあたりの断面積(mm²/m)に換算された値です。</li>
+                                <li><strong>断面力:</strong> 設計用の曲げモーメント(M)、軸力(N)、せん断力(S)を入力します。<strong>これらは部材幅1メートルあたりの値（kN・m/m, kN/m）として入力してください。</strong></li>
+                            </ul>
+                            <p class="text-xs text-slate-500 mt-2 pl-2">※ 断面タイトルは全角文字も使用できますが、それ以外の数値入力欄は<strong>半角数字</strong>を使用してください。</p>
+                        </div>
+
+                        <div>
+                            <h5 class="font-bold text-slate-700 text-sm mb-1">■ 便利機能</h5>
+                            <ul class="list-disc list-inside text-xs text-slate-600 leading-relaxed pl-2 space-y-1">
+                                <li><strong>コピー機能 <i data-lucide="copy" class="w-3 h-3 inline"></i>:</strong> 断面2～4のタイトル右にあるコピーボタンを押すと、断面1の入力データ（材料・形状・配筋）がその断面にコピーされます。断面力はコピーされません。</li>
+                                <li><strong>保存/読込:</strong> ヘッダーの「保存」ボタンで現在の入力状態をJSONファイルとしてダウンロードできます。「読込」ボタンで保存したファイルを復元できます。</li>
+                                <li><strong>印刷:</strong> 「印刷」ボタンを押すと、A4縦用紙に4つの断面が1行4列で配置されるレイアウトで印刷できます。比較資料の作成に便利です。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="text-center pt-8">
+                    <button onclick="toggleHelp(false)" class="px-8 py-2.5 bg-slate-800 text-white rounded font-bold hover:bg-slate-700 transition shadow-lg">閉じる</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Javascript -->
+    <!-- 計算ロジック・定数定義 -->
     <script>
         lucide.createIcons();
 
@@ -364,7 +436,7 @@
             { ...DEFAULT_SECTION, name: "断面-3" }, { ...DEFAULT_SECTION, name: "断面-4" }
         ];
 
-        // --- 計算ロジック (変更なし) ---
+        // --- 計算関数 ---
         function calculateRC(s) {
             const conc = CONCRETE_DATA[s.Fc] || CONCRETE_DATA[24];
             const f = s.allowFactor || 1.0;
@@ -375,20 +447,33 @@
 
             const CALC_B = 1000.0;
             const width_ratio = CALC_B / s.b;
-            const member_len_m = s.b / 1000.0; 
+            // const member_len_m = s.b / 1000.0; // 変更: 使用しないため削除
 
             const d = s.D - s.dt;
             const dp = s.dp;
             const n = s.n;
 
-            const As_total = s.manualAs !== null ? s.manualAs : (REBAR_AREAS[s.barSizeT] || 0) * s.barCountT;
-            const Asp_total = s.manualAsp !== null ? s.manualAsp : (REBAR_AREAS[s.barSizeC] || 0) * s.barCountC;
-            const As = As_total * width_ratio;
-            const Asp = Asp_total * width_ratio;
+            // 入力された本数から断面積を計算
+            const As_input_total = (REBAR_AREAS[s.barSizeT] || 0) * s.barCountT;
+            const Asp_input_total = (REBAR_AREAS[s.barSizeC] || 0) * s.barCountC;
+
+            // 計算用（単位幅1000mm換算）の断面積
+            const As = As_input_total * width_ratio;
+            const Asp = Asp_input_total * width_ratio;
             
-            const N_val = (s.N_kN / member_len_m) * 1000.0;      
-            const M_val = (s.M_kNm / member_len_m) * 1000000.0; 
-            const S_val = (s.S_kN / member_len_m) * 1000.0;      
+            // 表示用（1mあたりの断面積）
+            const As_per_meter = As;
+            const Asp_per_meter = Asp;
+            
+            // 変更: 入力値は既に1mあたりの値 (kN/m, kN-m/m) とするので、単位換算(kN->N, m->mm)のみ行う
+            // 旧: const N_val = (s.N_kN / member_len_m) * 1000.0;
+            const N_val = s.N_kN * 1000.0;      
+            
+            // 旧: const M_val = (s.M_kNm / member_len_m) * 1000000.0;
+            const M_val = s.M_kNm * 1000000.0;
+
+            // 旧: const S_val = (s.S_kN / member_len_m) * 1000.0;
+            const S_val = s.S_kN * 1000.0;      
 
             const b = CALC_B;
 
@@ -397,7 +482,7 @@
                 tau: 0, fa: 0, Ce: 1, Cpt: 1, 
                 allow_sigC, allow_sigS, allow_tauA1_base,
                 shearState: 'ok', bendStateC: 'ok', bendStateS: 'ok',
-                state: 'ok', msg: '', As_total, Asp_total, d 
+                state: 'ok', msg: '', As_per_meter, Asp_per_meter, d 
             };
 
             try {
@@ -468,81 +553,64 @@
         function drawSectionDetail(elemId, s, res) {
             const el = document.getElementById(elemId);
             if(!el) return;
-            const W = 300, H = 120, padding = 30;
-            const scaleX = (W - padding*2) / s.b;
+            const W = 200, H = 100;
+            const padding = 20; 
+            const rightMargin = 25; 
+            
+            const scaleX = (W - padding*2 - rightMargin) / s.b;
             const scaleY = (H - 20) / s.D;
             const scale = Math.min(scaleX, scaleY);
+            
             const drawW = s.b * scale;
             const drawH = s.D * scale;
-            const originX = (W - drawW) / 2 - 10;
+            
+            const originX = padding; 
             const originY = (H - drawH) / 2;
+
             const getDia = (name) => {
                 if(name.includes('D')) return parseInt(name.replace('D', '')) || 13;
                 if(name.includes('φ')) return parseInt(name.replace('φ', '')) || 9;
                 return 13;
             };
-            const rT = Math.max(getDia(s.barSizeT) * scale / 2, 2); 
-            const rC = Math.max(getDia(s.barSizeC) * scale / 2, 2);
+            const rT = Math.max(getDia(s.barSizeT) * scale / 2, 2.5); 
+            const rC = Math.max(getDia(s.barSizeC) * scale / 2, 2.5);
             const y_t = originY + drawH - s.dt * scale;
             const y_c = originY + s.dp * scale;
+
+            const sideCover = s.dt * scale; 
+            
             const makeCircles = (count, r, y, color) => {
                 let svg = '';
                 const cnt = Math.max(count, 1);
-                const spanW = drawW * 0.8;
-                const startX = originX + (drawW - spanW) / 2;
+                
+                const startX = originX + sideCover;
+                const endX = originX + drawW - sideCover;
+                const spanW = endX - startX;
+
                 if (cnt === 1) {
                     svg += `<circle cx="${originX + drawW/2}" cy="${y}" r="${r}" fill="${color}" stroke="white" stroke-width="0.5"/>`;
                 } else {
                     const step = spanW / (cnt - 1);
-                    for(let i=0; i<cnt; i++) svg += `<circle cx="${startX + step*i}" cy="${y}" r="${r}" fill="${color}" stroke="white" stroke-width="0.5"/>`;
+                    for(let i=0; i<cnt; i++) {
+                        svg += `<circle cx="${startX + step*i}" cy="${y}" r="${r}" fill="${color}" stroke="white" stroke-width="0.5"/>`;
+                    }
                 }
                 return svg;
             };
-            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}">`;
-            svg += `<rect x="${originX}" y="${originY}" width="${drawW}" height="${drawH}" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>`;
-            svg += makeCircles(s.barCountT, rT, y_t, "#ef4444");
-            svg += makeCircles(s.barCountC, rC, y_c, "#22c55e");
-            svg += `<text x="${originX + drawW + 5}" y="${originY + drawH/2}" font-size="10" fill="#64748b" dominant-baseline="middle">D=${s.D}</text>`;
-            svg += `<text x="${originX + drawW/2}" y="${originY + drawH + 12}" font-size="10" fill="#64748b" text-anchor="middle">b=${s.b}</text>`;
+
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+            svg += `<rect x="${originX}" y="${originY}" width="${drawW}" height="${drawH}" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>`;
+            svg += makeCircles(s.barCountT, rT, y_t, "#dc2626");
+            svg += makeCircles(s.barCountC, rC, y_c, "#16a34a");
+            svg += `<text x="${originX + drawW + 5}" y="${originY + drawH/2}" font-size="9" fill="#64748b" dominant-baseline="middle" font-weight="bold">h=${s.D}</text>`;
+            svg += `<text x="${originX + drawW/2}" y="${originY + drawH + 10}" font-size="9" fill="#64748b" text-anchor="middle" font-weight="bold">b=${s.b}</text>`;
             svg += `</svg>`;
             el.innerHTML = svg;
         }
 
-        function drawStressDiagram(elemId, s, res) {
-            const el = document.getElementById(elemId);
-            if(!el) return;
-            if(res.state === 'error') { el.innerHTML = ''; return; }
-            const W = 280, H = 80;
-            const scale = (H - 10) / s.D; 
-            const centerX = W / 2, topY = 5;
-            const y_na = topY + res.x * scale;
-            const y_d = topY + res.d * scale;
-            const y_dp = topY + s.dp * scale;
-            const bottomY = topY + s.D * scale;
-            const maxStress = Math.max(Math.abs(res.sigma_c), Math.abs(res.sigma_s)/15, 10);
-            const sScale = 70 / maxStress; 
-            const w_sc = Math.abs(res.sigma_c) * sScale;
-            const w_ss = Math.abs(res.sigma_s/15) * sScale; 
-            const strainTopX = centerX - w_sc;
-            const getStrainX = (y) => (y - y_na) * (strainTopX - centerX) / (topY - y_na) + centerX;
-            const strainBottomX = getStrainX(y_d + 10);
-            const fmt = (v) => Math.abs(v).toFixed(1);
-            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}">`;
-            svg += `<defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#475569" /></marker></defs>`;
-            svg += `<line x1="${centerX}" y1="${topY}" x2="${centerX}" y2="${bottomY}" stroke="#cbd5e1" stroke-dasharray="2 2" />`;
-            svg += `<line x1="${centerX-20}" y1="${y_na}" x2="${centerX+20}" y2="${y_na}" stroke="#3b82f6" stroke-width="1" />`;
-            svg += `<line x1="${strainTopX}" y1="${topY}" x2="${strainBottomX}" y2="${y_d + 10}" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="3 3" />`;
-            svg += `<path d="M ${centerX} ${y_na} L ${centerX - w_sc} ${topY} L ${centerX} ${topY} Z" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" />`;
-            svg += `<line x1="${centerX}" y1="${y_d}" x2="${centerX + w_ss}" y2="${y_d}" stroke="#ef4444" stroke-width="2" marker-end="url(#arr)" />`;
-            svg += `<text x="${centerX - w_sc - 4}" y="${topY + 8}" text-anchor="end" font-size="10" fill="#3b82f6" font-weight="bold">${fmt(res.sigma_c)}</text>`;
-            svg += `<text x="${centerX + w_ss + 4}" y="${y_d + 4}" font-size="10" fill="#ef4444" font-weight="bold">${fmt(res.sigma_s)}</text>`;
-            svg += `</svg>`;
-            el.innerHTML = svg;
-        }
-
-        // --- Common Functions ---
+        // --- データ操作・I/O ---
         function copySection1(targetIdx) {
-            if (!confirm('断面1のデータをコピーしますか？')) return;
+            // 修正: confirm() が機能しない環境のため、確認なしで即コピー実行するように変更
             const src = sections[0];
             const target = sections[targetIdx];
             ['b','D','dt','dp','barSizeT','barCountT','barSizeC','barCountC','manualAs','manualAsp','Fc','n','rebarType','allowFactor','userSigSa'].forEach(k => target[k] = src[k]);
@@ -563,7 +631,7 @@
             const blob = new Blob([JSON.stringify(sections, null, 2)], {type: "application/json"});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `rc_sections_v2.5.json`;
+            a.download = `rc_sections_v3.6.json`;
             a.click();
         }
         function loadData(input) {
@@ -576,19 +644,18 @@
                     if(Array.isArray(loaded) && loaded.length === 4) {
                         sections = loaded;
                         renderAll();
-                        alert("読込完了");
                     }
                 } catch(err) { alert("形式エラー"); }
             };
             reader.readAsText(file);
         }
-        function toggleModal(show) {
-            const el = document.getElementById('logic_modal');
+        function toggleHelp(show) {
+            const el = document.getElementById('help_modal');
             if (show) { el.classList.remove('hidden'); setTimeout(() => el.classList.remove('opacity-0'), 10); } 
             else { el.classList.add('opacity-0'); setTimeout(() => el.classList.add('hidden'), 200); }
         }
-        function showLogicInfo() { toggleModal(true); }
         
+        // --- レンダリング ---
         function renderAll() {
             const container = document.getElementById('sections_container');
             container.innerHTML = '';
@@ -598,7 +665,6 @@
                 container.insertAdjacentHTML('beforeend', html);
                 setTimeout(() => {
                     drawSectionDetail(`svg_section_${idx}`, sec, res);
-                    drawStressDiagram(`svg_stress_${idx}`, sec, res);
                 }, 0);
             });
             lucide.createIcons();
@@ -608,118 +674,205 @@
             renderAll();
         };
 
-        // UI生成関数
+        // --- HTML生成 (完全縦1列レイアウト・グループ強調) ---
         function createSectionHTML(idx, s, res) {
             const isErr = res.state === 'error';
             const makeOpts = (sel) => Object.keys(REBAR_AREAS).map(k => `<option value="${k}" ${k===sel?'selected':''}>${k}</option>`).join('');
             const makeFcOpts = (sel) => Object.keys(CONCRETE_DATA).map(k => `<option value="${k}" ${parseInt(k)===parseInt(sel)?'selected':''}>Fc${k}</option>`).join('');
             const makeRebarOpts = (sel) => Object.keys(REBAR_DATA).map(k => `<option value="${k}" ${k===sel?'selected':''}>${REBAR_DATA[k].name}</option>`).join('');
             const fmt = (v, d=2) => (isErr || isNaN(v)) ? '-' : Math.abs(v).toFixed(d);
+            const fmtInt = (v) => (isErr || isNaN(v)) ? '-' : Math.round(v).toLocaleString();
+            
             const getStatus = (state) => {
-                if (state === 'ng') return '<span class="text-red-600 font-bold bg-red-100 px-1 rounded text-[10px]">NG</span>';
-                if (state === 'ok') return '<span class="text-blue-600 font-bold bg-blue-100 px-1 rounded text-[10px]">OK</span>';
+                if (state === 'ng') return '<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600">NG</span>';
+                if (state === 'ok') return '<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-600">OK</span>';
                 return '-';
             };
-            let copyBtn = idx > 0 ? `<button onclick="copySection1(${idx})" class="ml-auto px-2 py-1 text-xs bg-white border border-slate-300 rounded text-slate-500 hover:text-blue-600 transition no-print" title="断面1コピー"><i data-lucide="copy" class="w-3 h-3"></i></button>` : '';
+            let copyBtn = idx > 0 ? `<button onclick="copySection1(${idx})" class="p-1 text-slate-400 hover:text-blue-600 transition no-print" title="断面1からコピー"><i data-lucide="copy" class="w-4 h-4"></i></button>` : '';
+
+            // せん断の詳細情報
+            const shearDetail = `
+                <div class="text-[9px] text-slate-400 mt-0.5 text-right font-mono">
+                    τa1:${fmt(res.allow_tauA1_base, 2)}, Ce:${fmt(res.Ce, 2)}, Cpt:${fmt(res.Cpt, 2)}, α:${s.allowFactor}
+                </div>
+            `;
 
             return `
-            <div class="section-card bg-white rounded-lg shadow-sm border border-slate-300 flex flex-col overflow-hidden">
-                <div class="px-3 py-2 bg-slate-100 border-b border-slate-300 flex justify-between items-center">
-                    <div class="flex items-center gap-2 flex-1">
-                        <span class="bg-slate-700 text-white text-xs font-bold px-1.5 rounded">${idx+1}</span>
+            <div class="section-card bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <!-- Card Header -->
+                <div class="card-header px-3 py-1.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                    <div class="flex items-center gap-2 w-full">
+                        <span class="flex items-center justify-center w-5 h-5 bg-slate-700 text-white text-[10px] font-bold rounded-full">${idx+1}</span>
                         <input type="text" value="${s.name}" onchange="updateData(${idx}, 'name', this.value)" 
-                            class="font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-blue-500 p-0 w-full text-sm">
+                            class="font-bold text-slate-800 bg-white border border-slate-300 rounded focus:border-blue-500 w-full text-xs px-1.5 py-0.5 placeholder-slate-400" placeholder="断面名">
                     </div>
                     ${copyBtn}
                 </div>
 
-                <div class="p-3 flex flex-col gap-3 text-sm">
-                    <div class="h-[120px] bg-white rounded border border-slate-200 relative flex items-center justify-center overflow-hidden">
+                <div class="p-3 flex flex-col text-sm flex-1">
+                    
+                    <!-- Top Visual (Smaller) -->
+                    <div class="h-[100px] w-full bg-white rounded border border-slate-200 flex items-center justify-center relative overflow-hidden mb-2">
                         <div id="svg_section_${idx}" class="w-full h-full"></div>
                     </div>
 
-                    <div class="bg-blue-50/50 border border-blue-100 rounded-lg p-2.5 space-y-2.5">
-                        <div class="text-[10px] text-blue-400 font-bold tracking-wider uppercase border-b border-blue-100 mb-1">Input Data</div>
-                        
-                        <div class="grid grid-cols-3 gap-2">
-                            <div><span class="text-xs text-slate-500 block">コンクリート</span><select onchange="updateData(${idx}, 'Fc', this.value)" class="w-full border-b border-blue-200 bg-transparent text-right font-mono text-xs">${makeFcOpts(s.Fc)}</select></div>
-                            <div class="col-span-1"><span class="text-xs text-slate-500 block">鉄筋</span><div class="flex gap-1"><select onchange="updateData(${idx}, 'rebarType', this.value)" class="w-2/3 border-b border-blue-200 bg-transparent text-right font-mono text-[10px]">${makeRebarOpts(s.rebarType)}</select><input type="number" value="${s.userSigSa}" onchange="updateData(${idx}, 'userSigSa', this.value)" class="w-1/3 border-b border-blue-200 bg-transparent text-right font-mono text-[10px]" title="許容引張応力度"></div></div>
-                            <div><span class="text-xs text-slate-500 block">割増係数</span><input type="number" step="0.1" value="${s.allowFactor}" onchange="updateData(${idx}, 'allowFactor', this.value)" class="w-full border-b border-blue-200 bg-transparent text-right font-mono text-xs"></div>
+                    <!-- Input Area: Strictly 1 Column -->
+                    <div>
+                        <!-- 1. Material -->
+                        <div class="mt-0">
+                            <div class="section-title">材料条件</div>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">コンクリート <span class="text-[9px] text-slate-400">(N/mm²)</span></label>
+                                    <select onchange="updateData(${idx}, 'Fc', this.value)" class="input-bare w-20 text-[11px]">${makeFcOpts(s.Fc)}</select>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">鉄筋種類</label>
+                                    <select onchange="updateData(${idx}, 'rebarType', this.value)" class="input-bare w-20 text-[10px]">${makeRebarOpts(s.rebarType)}</select>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">許容応力度 <span class="text-[9px] text-slate-400">(N/mm²)</span></label>
+                                    <div class="flex items-center justify-end gap-1 w-20">
+                                        <input type="number" value="${s.userSigSa}" onchange="updateData(${idx}, 'userSigSa', this.value)" class="input-bare w-full text-blue-600">
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">割増係数 (α)</label>
+                                    <div class="flex items-center justify-end gap-1 w-12">
+                                        <span class="text-[10px] text-slate-400">x</span>
+                                        <input type="number" step="0.1" value="${s.allowFactor}" onchange="updateData(${idx}, 'allowFactor', this.value)" class="input-bare w-full">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-4 gap-2">
-                            <div><span class="text-xs text-slate-500 block text-center">b <span class="text-[9px]">(mm)</span></span><input type="number" value="${s.b}" onchange="updateData(${idx}, 'b', this.value)" class="w-full border-b border-blue-200 bg-transparent text-center font-mono text-sm"></div>
-                            <div><span class="text-xs text-slate-500 block text-center">D <span class="text-[9px]">(mm)</span></span><input type="number" value="${s.D}" onchange="updateData(${idx}, 'D', this.value)" class="w-full border-b border-blue-200 bg-transparent text-center font-mono text-sm"></div>
-                            <div><span class="text-xs text-slate-500 block text-center">dt <span class="text-[9px]">(mm)</span></span><input type="number" value="${s.dt}" onchange="updateData(${idx}, 'dt', this.value)" class="w-full border-b border-blue-200 bg-transparent text-center font-mono text-sm"></div>
-                            <div><span class="text-xs text-slate-500 block text-center">dp <span class="text-[9px]">(mm)</span></span><input type="number" value="${s.dp}" onchange="updateData(${idx}, 'dp', this.value)" class="w-full border-b border-blue-200 bg-transparent text-center font-mono text-sm"></div>
+
+                        <!-- 2. Geometry -->
+                        <!-- 修正: section-separator クラスに加え、念のため直接スタイルを記述して区切りを強制 -->
+                        <div class="section-separator" style="margin-top: 12px; padding-top: 6px; border-top: 1px solid #cbd5e1;">
+                            <div class="section-title">断面形状 (mm)</div>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">幅 b</label>
+                                    <input type="number" value="${s.b}" onchange="updateData(${idx}, 'b', this.value)" class="input-bare w-16">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">高さ h</label>
+                                    <input type="number" value="${s.D}" onchange="updateData(${idx}, 'D', this.value)" class="input-bare w-16">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">引張鉄筋位置 dt</label>
+                                    <input type="number" value="${s.dt}" onchange="updateData(${idx}, 'dt', this.value)" class="input-bare w-16">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">圧縮鉄筋位置 dp</label>
+                                    <input type="number" value="${s.dp}" onchange="updateData(${idx}, 'dp', this.value)" class="input-bare w-16">
+                                </div>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="flex items-center gap-1"><span class="text-xs text-slate-500 w-5">As</span><select onchange="updateData(${idx}, 'barSizeT', this.value)" class="w-full border rounded px-1 py-0.5 bg-white text-xs font-mono">${makeOpts(s.barSizeT)}</select><span class="text-xs">x</span><input type="number" value="${s.barCountT}" onchange="updateData(${idx}, 'barCountT', this.value)" class="w-10 border rounded px-1 py-0.5 text-center text-xs font-mono"></div>
-                            <div class="flex items-center gap-1"><span class="text-xs text-slate-500 w-5">As'</span><select onchange="updateData(${idx}, 'barSizeC', this.value)" class="w-full border rounded px-1 py-0.5 bg-white text-xs font-mono">${makeOpts(s.barSizeC)}</select><span class="text-xs">x</span><input type="number" value="${s.barCountC}" onchange="updateData(${idx}, 'barCountC', this.value)" class="w-10 border rounded px-1 py-0.5 text-center text-xs font-mono"></div>
+
+                        <!-- 3. Rebar -->
+                        <!-- 修正: ここも強制的に区切り線を入れる -->
+                        <div class="section-separator" style="margin-top: 12px; padding-top: 6px; border-top: 1px solid #cbd5e1;">
+                            <div class="section-title">配筋</div>
+                            <div class="flex flex-col gap-2">
+                                <div>
+                                    <div class="flex items-center justify-between">
+                                        <label class="label-sm text-red-500 font-bold">引張 As</label>
+                                        <div class="flex items-center gap-1">
+                                            <select onchange="updateData(${idx}, 'barSizeT', this.value)" class="bg-transparent border-b border-slate-300 text-[11px] font-mono py-0.5 w-12 text-right">${makeOpts(s.barSizeT)}</select>
+                                            <span class="text-[10px] text-slate-400">x</span>
+                                            <input type="number" value="${s.barCountT}" onchange="updateData(${idx}, 'barCountT', this.value)" class="w-8 border-b border-slate-300 text-center font-mono text-[11px]">
+                                        </div>
+                                    </div>
+                                    <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
+                                        <!-- 修正: fmtInt(整数) -> fmt(小数第2位) に変更 -->
+                                        (${fmt(res.As_per_meter, 2)} mm²/m)
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex items-center justify-between">
+                                        <label class="label-sm text-green-600 font-bold">圧縮 As'</label>
+                                        <div class="flex items-center gap-1">
+                                            <select onchange="updateData(${idx}, 'barSizeC', this.value)" class="bg-transparent border-b border-slate-300 text-[11px] font-mono py-0.5 w-12 text-right">${makeOpts(s.barSizeC)}</select>
+                                            <span class="text-[10px] text-slate-400">x</span>
+                                            <input type="number" value="${s.barCountC}" onchange="updateData(${idx}, 'barCountC', this.value)" class="w-8 border-b border-slate-300 text-center font-mono text-[11px]">
+                                        </div>
+                                    </div>
+                                    <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
+                                        <!-- 修正: fmtInt(整数) -> fmt(小数第2位) に変更 -->
+                                        (${fmt(res.Asp_per_meter, 2)} mm²/m)
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-2">
-                             <div><span class="text-xs text-slate-500 block text-center">M <span class="text-[9px]">(kN·m/m)</span></span><input type="number" value="${s.M_kNm}" onchange="updateData(${idx}, 'M_kNm', this.value)" class="w-full border rounded px-2 py-1 text-right font-mono text-sm bg-white"></div>
-                             <div><span class="text-xs text-slate-500 block text-center">S <span class="text-[9px]">(kN/m)</span></span><input type="number" value="${s.S_kN}" onchange="updateData(${idx}, 'S_kN', this.value)" class="w-full border rounded px-2 py-1 text-right font-mono text-sm bg-white"></div>
-                             <div><span class="text-xs text-slate-500 block text-center">N <span class="text-[9px]">(kN/m)</span></span><input type="number" value="${s.N_kN}" onchange="updateData(${idx}, 'N_kN', this.value)" class="w-full border rounded px-2 py-1 font-bold text-blue-700 text-right font-mono text-sm bg-white"></div>
+
+                        <!-- 4. Loads -->
+                        <!-- 修正: ここも強制的に区切り線を入れる -->
+                        <div class="section-separator" style="margin-top: 12px; padding-top: 6px; border-top: 1px solid #cbd5e1;">
+                            <div class="section-title">断面力 (/m)</div>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">曲げ M <span class="text-[9px] text-slate-400">(kN·m)</span></label>
+                                    <input type="number" value="${s.M_kNm}" onchange="updateData(${idx}, 'M_kNm', this.value)" class="input-bare w-16 font-bold">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">軸力 N <span class="text-[9px] text-slate-400">(kN)</span></label>
+                                    <input type="number" value="${s.N_kN}" onchange="updateData(${idx}, 'N_kN', this.value)" class="input-bare w-16 font-bold text-blue-600">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="label-sm">せん断 S <span class="text-[9px] text-slate-400">(kN)</span></label>
+                                    <input type="number" value="${s.S_kN}" onchange="updateData(${idx}, 'S_kN', this.value)" class="input-bare w-16 font-bold">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-emerald-50/50 border border-emerald-100 rounded-lg p-2.5 space-y-2">
-                        <div class="text-[10px] text-emerald-500 font-bold tracking-wider uppercase border-b border-emerald-100 mb-1 flex justify-between">
-                            <span>Calculation Result</span>
-                            <span class="font-mono normal-case text-slate-500">x = ${fmt(res.x, 1)} mm</span>
-                        </div>
-                        <div class="h-[80px] w-full relative flex items-center justify-center overflow-visible mb-2">
-                            <div id="svg_stress_${idx}" class="w-full h-full"></div>
-                        </div>
-                        <table class="w-full text-xs">
-                            <thead>
-                                <tr class="text-slate-400 border-b border-emerald-200">
-                                    <th class="text-left font-normal pb-1">項目</th>
-                                    <th class="text-right font-normal pb-1">発生</th>
-                                    <th class="text-right font-normal pb-1 col-allow">許容</th>
-                                    <th class="text-center font-normal pb-1 w-10">判定</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-emerald-100">
-                                <tr>
-                                    <td class="py-1"><span class="math-expr font-bold">σc</span> 曲げ圧縮 <span class="text-[9px] text-slate-400">(N/mm²)</span></td>
-                                    <td class="py-1 text-right font-mono font-bold text-blue-700">${fmt(res.sigma_c)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500 col-allow">${res.allow_sigC.toFixed(1)}</td>
-                                    <td class="py-1 text-center">${getStatus(res.bendStateC)}</td>
-                                </tr>
-                                <tr>
-                                    <td class="py-1"><span class="math-expr font-bold">σs</span> 鉄筋引張 <span class="text-[9px] text-slate-400">(N/mm²)</span></td>
-                                    <td class="py-1 text-right font-mono font-bold text-red-600">${fmt(res.sigma_s, 1)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500 col-allow">${res.allow_sigS.toFixed(0)}</td>
-                                    <td class="py-1 text-center">${getStatus(res.bendStateS)}</td>
-                                </tr>
-                                <tr>
-                                    <td class="py-1"><span class="math-expr font-bold">σs'</span> 鉄筋圧縮 <span class="text-[9px] text-slate-400">(N/mm²)</span></td>
-                                    <td class="py-1 text-right font-mono font-bold text-green-600">${fmt(res.sigma_sp, 1)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500 col-allow">${res.allow_sigS.toFixed(0)}</td>
-                                    <td class="py-1 text-center">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="py-1">
-                                        <div class="math-expr font-bold">τ <span class="text-[9px] text-slate-400 font-normal">(N/mm²)</span></div>
-                                        <div class="text-[9px] text-slate-400 leading-tight mt-0.5">
-                                            τa1:${fmt(res.allow_tauA1_base, 3)}, α:${s.allowFactor}<br>
-                                            Ce:${fmt(res.Ce, 2)}, Cpt:${fmt(res.Cpt, 2)}
-                                        </div>
-                                    </td>
-                                    <td class="py-1 text-right font-mono font-bold text-slate-800 align-top">${fmt(res.tau, 3)}</td>
-                                    <td class="py-1 text-right font-mono text-slate-500 align-top col-allow">${fmt(res.fa, 3)}</td>
-                                    <td class="py-1 text-center align-top">${getStatus(res.shearState)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- 区切り線（計算結果前） -->
+                    <!-- 修正: styleでmargin/borderを強制指定 -->
+                    <div class="section-separator" style="margin-top: 12px; padding-top: 6px; border-top: 1px solid #94a3b8;"></div>
+
+                    <!-- Result Section (Stacked) -->
+                    <div class="bg-slate-50 rounded p-2 border border-slate-200">
+                        <div class="text-[11px] font-bold text-slate-700 border-b-2 border-slate-200 mb-2 pb-0.5">計算結果</div>
                         
-                        <!-- 印刷専用の許容値テーブル (印刷設定以外変更不可だが、構造変更必須のため追加) -->
-                        <div class="print-only print-allow-table">
-                            <div class="grid grid-cols-2 gap-x-2 text-[7pt] text-slate-500 mt-1 pt-1 border-t border-slate-300">
-                                <div class="flex justify-between"><span>許容σc:</span><span class="font-mono">${res.allow_sigC.toFixed(1)}</span></div>
-                                <div class="flex justify-between"><span>許容σs:</span><span class="font-mono">${res.allow_sigS.toFixed(0)}</span></div>
-                                <div class="flex justify-between"><span>許容τ:</span><span class="font-mono">${fmt(res.fa, 3)}</span></div>
+                        <!-- Stacked Results -->
+                        <div class="space-y-3">
+                            <!-- Sigma C -->
+                            <div>
+                                <div class="flex justify-between border-b border-slate-200 pb-0.5 mb-1">
+                                    <span class="text-[10px] font-bold text-slate-700">σc 曲げ圧縮 <span class="text-[9px] font-normal text-slate-400">(N/mm²)</span></span>
+                                    ${getStatus(res.bendStateC)}
+                                </div>
+                                <div class="flex justify-between px-1">
+                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-blue-600 text-xs">${fmt(res.sigma_c)}</span></div>
+                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${res.allow_sigC.toFixed(1)}</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Sigma S -->
+                            <div>
+                                <div class="flex justify-between border-b border-slate-200 pb-0.5 mb-1">
+                                    <span class="text-[10px] font-bold text-slate-700">σs 鉄筋引張 <span class="text-[9px] font-normal text-slate-400">(N/mm²)</span></span>
+                                    ${getStatus(res.bendStateS)}
+                                </div>
+                                <div class="flex justify-between px-1">
+                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-red-600 text-xs">${fmt(res.sigma_s, 1)}</span></div>
+                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${res.allow_sigS.toFixed(0)}</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Tau -->
+                            <div>
+                                <div class="flex justify-between border-b border-slate-200 pb-0.5 mb-1">
+                                    <span class="text-[10px] font-bold text-slate-700">τ せん断 <span class="text-[9px] font-normal text-slate-400">(N/mm²)</span></span>
+                                    ${getStatus(res.shearState)}
+                                </div>
+                                <div class="flex justify-between px-1">
+                                    <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-slate-700 text-xs">${fmt(res.tau, 3)}</span></div>
+                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${fmt(res.fa, 3)}</span></div>
+                                </div>
+                                ${shearDetail}
                             </div>
                         </div>
                     </div>
@@ -727,7 +880,6 @@
             </div>
             `;
         }
-
     </script>
 </body>
 </html>
