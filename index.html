@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.5.9</title>
+    <title>RC断面計算（4断面一括）Ver.6.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -264,7 +264,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.9</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.6.0</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -590,6 +590,12 @@
             </div>
             <div class="p-6 overflow-y-auto text-slate-700 text-sm leading-relaxed space-y-4">
                 <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.6.0 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>Fc=40の許容曲げ圧縮応力度を13.0から14.0に修正</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
                     <h5 class="font-bold text-slate-800">Ver.5.9 (2026-02-07)</h5>
                     <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
                         <li>図解修正：断面図の圧縮鉄筋を削除（単鉄筋モデル）</li>
@@ -705,7 +711,7 @@
 
         const CONCRETE_DATA = {
             18: { sigCa: 6.0, tauA1: 0.21 }, 21: { sigCa: 7.0, tauA1: 0.22 }, 24: { sigCa: 8.0, tauA1: 0.23 },
-            27: { sigCa: 9.0, tauA1: 0.24 }, 30: { sigCa: 10.0, tauA1: 0.25 }, 40: { sigCa: 13.0, tauA1: 0.29 },
+            27: { sigCa: 9.0, tauA1: 0.24 }, 30: { sigCa: 10.0, tauA1: 0.25 }, 40: { sigCa: 14.0, tauA1: 0.29 }, // 修正箇所: 13.0 -> 14.0
             50: { sigCa: 16.0, tauA1: 0.31 }
         };
 
@@ -1137,8 +1143,7 @@
                                         </div>
                                     </div>
                                     <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
-                                        <!-- 修正: pt表示追加 -->
-                                        (${fmt(res.As_per_meter, 0)} mm²/m, pt:${fmt(res.ptPerc, 2)}%)
+                                        (${fmt(res.As_per_meter, 2)} mm²/m, pt:${fmt(res.ptPerc, 2)}%)
                                     </div>
                                 </div>
 
@@ -1152,7 +1157,7 @@
                                         </div>
                                     </div>
                                     <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
-                                        (${fmt(res.Asp_per_meter, 0)} mm²/m)
+                                        (${fmt(res.Asp_per_meter, 2)} mm²/m)
                                     </div>
                                 </div>
                             </div>
