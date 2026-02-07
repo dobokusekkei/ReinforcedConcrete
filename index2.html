@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.4.3</title>
+    <title>RC断面計算（4断面一括）Ver.4.4</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -27,13 +27,11 @@
         
         .font-mono { font-family: 'Roboto Mono', monospace; }
 
-        /* --- CSS修正: @apply を削除し、標準CSSに書き換え --- */
-        
         /* 入力フィールドのカスタマイズ */
         .input-bare {
             width: 100%;
             background-color: transparent;
-            border-bottom: 1px solid #cbd5e1; /* slate-300 */
+            border-bottom: 1px solid #cbd5e1;
             font-family: 'Roboto Mono', monospace;
             padding: 1px 2px;
             font-size: 13px;
@@ -42,29 +40,29 @@
         }
         .input-bare:focus {
             outline: none;
-            border-color: #3b82f6; /* blue-500 */
-            background-color: rgba(239, 246, 255, 0.5); /* blue-50/50 */
+            border-color: #3b82f6;
+            background-color: rgba(239, 246, 255, 0.5);
         }
         
         /* ラベルのスタイル */
         .label-sm {
             font-size: 11px;
-            color: #64748b; /* slate-500 */
+            color: #64748b;
             font-weight: 500;
             white-space: nowrap;
         }
         
         /* セクション見出しと区切り線 */
         .section-separator {
-            margin-top: 1rem;      /* mt-4 */
-            padding-top: 0.5rem;   /* pt-2 */
-            border-top: 1px solid #cbd5e1; /* border-slate-300: 線を明確に */
+            margin-top: 1rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #cbd5e1;
         }
         .section-title {
             font-size: 11px;
             font-weight: 700;
-            color: #334155; /* slate-700 */
-            margin-bottom: 0.5rem; /* mb-2 */
+            color: #334155;
+            margin-bottom: 0.5rem;
             display: block;
         }
 
@@ -79,10 +77,10 @@
 
         /* 数式表示用スタイル */
         .formula-box {
-            background-color: #f8fafc; /* slate-50 */
+            background-color: #f8fafc;
             padding: 1rem;
             border-radius: 0.25rem;
-            border: 1px solid #e2e8f0; /* slate-200 */
+            border: 1px solid #e2e8f0;
             margin-top: 0.5rem;
             margin-bottom: 0.5rem;
             overflow-x: auto;
@@ -96,112 +94,106 @@
         .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
         .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* --- 修正: 印刷設定の再構築 (コンテナ独立縮小ロジック) --- */
+        /* --- 修正: 印刷設定 (Zoomによる強制縮小アプローチ) --- */
         @media print {
-            @page { 
-                size: A4 portrait; 
-                margin: 5mm; 
+            /* 1. 全要素のリセット設定 (最優先) */
+            * {
+                visibility: visible !important;
+                overflow: visible !important; /* 全てのはみ出しを許可 */
+                -webkit-print-color-adjust: exact !important; /* 背景色を強制出力 */
+                print-color-adjust: exact !important;
             }
-            
-            /* 1. 親要素（html, body, main）は「A4用紙」に従わせる */
-            html, body, main {
-                width: 100% !important;
+
+            /* 2. 不要なUIの完全非表示 */
+            header, .no-print, #help_modal, .btn-tool {
+                display: none !important;
+                height: 0 !important;
+                width: 0 !important;
+            }
+
+            /* 3. ページ設定 */
+            @page {
+                size: A4 portrait;
+                margin: 5mm;
+            }
+
+            /* 4. 親要素の幅固定と縮小 */
+            html, body {
+                width: 1300px !important;     /* 4列が並ぶのに十分な幅を強制確保 */
+                min-width: 1300px !important; 
                 height: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                overflow: visible !important;
                 background-color: white !important;
                 display: block !important;
-                /* zoomや固定幅の指定は削除 */
-            }
-
-            /* 2. 中身（#sections_container）だけを広げて、Transformで縮める */
-            #sections_container {
-                width: 1250px !important;       /* 4列が綺麗に並ぶ幅を確保 */
-                display: flex !important;
-                flex-wrap: nowrap !important;   /* 折り返し禁止 */
                 
-                transform: scale(0.60) !important; /* 幅1250pxを0.6倍してA4幅(約750px)に収める */
-                transform-origin: top left !important; /* 左上基準で縮小 */
-                margin-left: 0 !important;
-                
-                gap: 10px !important;
-                justify-content: flex-start !important;
-                overflow: visible !important;
+                zoom: 0.55 !important;        /* 1300px * 0.55 ≈ 715px (A4印字幅に収める) */
             }
 
-            /* 4. 不要要素の完全消去 */
-            .no-print, header, .btn-tool, .shadow-sm, #help_modal { 
-                display: none !important; 
-            }
-
-            /* 3. カード（.section-card）のスタイル維持 */
-            .section-card {
-                break-inside: avoid;
-                border: 1px solid #333 !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
+            /* 5. メインコンテナのレイアウト */
+            main {
                 margin: 0 !important;
-                padding: 1mm !important;
-                
-                width: auto !important;
-                flex: 1 !important; /* 均等割り */
-                
-                background: white !important;
-                transform: none !important;
+                padding: 10px 0 0 0 !important;
+                width: 100% !important;
             }
 
-            /* --- 以下、印刷時のスタイル調整（維持） --- */
+            #sections_container {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;   /* 折り返し禁止 */
+                justify-content: flex-start !important;
+                align-items: flex-start !important;
+                gap: 10px !important;
+                width: 100% !important;
+            }
 
-            /* ヘッダー装飾削除 */
+            /* 6. カードスタイルの保持 */
+            .section-card {
+                width: auto !important;
+                flex: 1 1 0 !important;         /* 均等割り */
+                min-width: 0 !important;
+                margin: 0 !important;
+                padding: 2px !important;
+                border: 1px solid #333 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+                background: white !important;
+                transform: none !important;     /* transformは使用しない */
+            }
+
+            /* 入力欄の見た目調整（枠線を消す等） */
             .card-header {
-                background: none !important;
                 border-bottom: 1px solid #000 !important;
-                padding: 1mm 0 !important;
-                margin-bottom: 2mm !important;
+                background: none !important;
+                padding: 2px 0 !important;
             }
             .card-header input {
-                font-size: 10pt !important;
+                border: none !important;
                 font-weight: bold !important;
                 color: #000 !important;
-                border: none !important;
             }
-
-            /* 要素間隔の圧縮 */
-            .p-3 { padding: 0 !important; }
-            .gap-2 { gap: 1mm !important; }
-            
-            /* 区切り線 */
-            .section-separator { margin-top: 2mm !important; padding-top: 1mm !important; border-top-width: 0.5px !important; border-color: #000 !important; }
-            .section-title { margin-bottom: 1mm !important; font-size: 9pt !important; color: #000 !important; }
-            .space-y-3 { margin-top: 1mm !important; }
-            .h-[100px] { height: 70px !important; }
-
-            /* 入力エリア装飾削除 */
-            .bg-blue-50, .bg-emerald-50, .bg-slate-50, .bg-white {
-                background-color: transparent !important;
+            .input-bare, select {
                 border: none !important;
+                border-bottom: 0.5px solid #ccc !important;
+                font-size: 8pt !important;
             }
-            .border-b { border-bottom-width: 0.5px !important; border-color: #ccc !important; }
-            .border-t { border-top-width: 0.5px !important; border-color: #ccc !important; }
             
-            /* 文字色統一 */
-            .text-slate-500, .text-slate-600, .text-slate-700, .text-blue-600, .text-emerald-600, .text-red-500, .text-red-600, .text-green-600 {
+            /* 色調整 */
+            .text-slate-500, .text-slate-600, .text-slate-700, .text-blue-600, .text-red-500, .text-green-600 {
                 color: #000 !important;
             }
             
-            /* 文字サイズ */
-            .input-bare, select { font-size: 8pt !important; }
-            .label-sm { font-size: 7pt !important; }
-            
-            /* 表示制御 */
-            .web-allow-col { display: none !important; }
-            .print-allow-row { display: table-row !important; }
+            /* 区切り線 */
+            .section-separator {
+                margin-top: 4px !important;
+                padding-top: 2px !important;
+                border-top: 0.5px solid #000 !important;
+            }
         }
 
         /* 画面表示用のカードスタイル */
         .section-card {
-            width: 230px; /* 少し幅を広げてゆとりを持たせる */
+            width: 230px;
             flex-shrink: 0;
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -241,7 +233,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.3</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.4</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -332,10 +324,10 @@
                                 <div class="text-center">
                                     <span class="text-xs font-bold mr-2">鉄筋圧縮:</span>
                                     <span class="math-text">&sigma;'<sub>s</sub> = n &sigma;<sub>c</sub> <div class="fraction"><span class="numerator">x-d<sub>p</sub></span><span class="denominator">x</span></div></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </section>
 
                 <!-- 2. せん断応力度 -->
