@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.5.1</title>
+    <title>RC断面計算（4断面一括）Ver.5.2</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -133,7 +133,7 @@
             /* 5. メインコンテナのレイアウト (余白調整) */
             main {
                 margin: 0 !important;
-                /* 修正: 左パディングを 20mm -> 15mm に変更 */
+                /* 左パディング: 15mm */
                 padding: 35mm 0 0 15mm !important;
                 width: 100% !important;
             }
@@ -172,18 +172,19 @@
                 border: none !important;
                 font-weight: bold !important;
                 color: #000 !important;
+                font-size: 11pt !important; /* 修正: 断面名フォントサイズ拡大 */
             }
             .input-bare {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
-                font-size: 8pt !important;
+                font-size: 10pt !important; /* 修正: 入力値フォントサイズ拡大 (8pt -> 10pt) */
             }
 
-            /* --- 修正: Select要素（鉄筋径など）の表示崩れ防止 --- */
+            /* Select要素（鉄筋径など）の表示崩れ防止 */
             select {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
-                font-size: 8pt !important;
+                font-size: 10pt !important; /* 修正: 選択値フォントサイズ拡大 (8pt -> 10pt) */
                 /* 矢印を消して幅を確保 */
                 appearance: none !important;
                 -webkit-appearance: none !important;
@@ -249,7 +250,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.1</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.2</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
