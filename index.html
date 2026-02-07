@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.5.0</title>
+    <title>RC断面計算（4断面一括）Ver.5.1</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -249,7 +249,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.0</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.1</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -448,13 +448,46 @@
             allowFactor: 1.00
         };
 
+        // --- 修正: 初期化ロジックの変更 (断面2-4は空にする) ---
         let sections = [
-            { ...DEFAULT_SECTION, name: "断面-1" }, { ...DEFAULT_SECTION, name: "断面-2" },
-            { ...DEFAULT_SECTION, name: "断面-3" }, { ...DEFAULT_SECTION, name: "断面-4" }
+            { ...DEFAULT_SECTION, name: "断面-1" },
+            { 
+                ...DEFAULT_SECTION, name: "断面-2", 
+                b: null, D: null, dt: null, dp: null, 
+                barCountT: null, barCountC: null, 
+                N_kN: null, M_kNm: null, S_kN: null, 
+                userSigSa: null, allowFactor: null 
+            },
+            { 
+                ...DEFAULT_SECTION, name: "断面-3", 
+                b: null, D: null, dt: null, dp: null, 
+                barCountT: null, barCountC: null, 
+                N_kN: null, M_kNm: null, S_kN: null, 
+                userSigSa: null, allowFactor: null 
+            },
+            { 
+                ...DEFAULT_SECTION, name: "断面-4", 
+                b: null, D: null, dt: null, dp: null, 
+                barCountT: null, barCountC: null, 
+                N_kN: null, M_kNm: null, S_kN: null, 
+                userSigSa: null, allowFactor: null 
+            }
         ];
 
         // --- 計算関数 ---
         function calculateRC(s) {
+            // --- 修正: 必須入力チェック (入力がなければ空の結果を返す) ---
+            if (!s.b || !s.D) {
+                return { 
+                    state: 'empty', // 空の状態を示すフラグ
+                    x: 0, sigma_c: 0, sigma_s: 0, sigma_sp: 0, 
+                    tau: 0, fa: 0, Ce: 1, Cpt: 1, 
+                    allow_sigC: 0, allow_sigS: 0, allow_tauA1_base: 0,
+                    shearState: '', bendStateC: '', bendStateS: '',
+                    msg: '', As_per_meter: 0, Asp_per_meter: 0, d: 0
+                };
+            }
+
             const conc = CONCRETE_DATA[s.Fc] || CONCRETE_DATA[24];
             const f = s.allowFactor || 1.0;
 
@@ -464,15 +497,14 @@
 
             const CALC_B = 1000.0;
             const width_ratio = CALC_B / s.b;
-            // const member_len_m = s.b / 1000.0; // 変更: 使用しないため削除
 
             const d = s.D - s.dt;
             const dp = s.dp;
             const n = s.n;
 
             // 入力された本数から断面積を計算
-            const As_input_total = (REBAR_AREAS[s.barSizeT] || 0) * s.barCountT;
-            const Asp_input_total = (REBAR_AREAS[s.barSizeC] || 0) * s.barCountC;
+            const As_input_total = (REBAR_AREAS[s.barSizeT] || 0) * (s.barCountT || 0); // null対策
+            const Asp_input_total = (REBAR_AREAS[s.barSizeC] || 0) * (s.barCountC || 0); // null対策
 
             // 計算用（単位幅1000mm換算）の断面積
             const As = As_input_total * width_ratio;
@@ -482,15 +514,10 @@
             const As_per_meter = As;
             const Asp_per_meter = Asp;
             
-            // 変更: 入力値は既に1mあたりの値 (kN/m, kN-m/m) とするので、単位換算(kN->N, m->mm)のみ行う
-            // 旧: const N_val = (s.N_kN / member_len_m) * 1000.0;
-            const N_val = s.N_kN * 1000.0;      
-            
-            // 旧: const M_val = (s.M_kNm / member_len_m) * 1000000.0;
-            const M_val = s.M_kNm * 1000000.0;
-
-            // 旧: const S_val = (s.S_kN / member_len_m) * 1000.0;
-            const S_val = s.S_kN * 1000.0;      
+            // 入力値は既に1mあたりの値 (kN/m, kN-m/m) とするので、単位換算(kN->N, m->mm)のみ行う
+            const N_val = (s.N_kN || 0) * 1000.0;      
+            const M_val = (s.M_kNm || 0) * 1000000.0;
+            const S_val = (s.S_kN || 0) * 1000.0;      
 
             const b = CALC_B;
 
@@ -570,6 +597,12 @@
         function drawSectionDetail(elemId, s, res) {
             const el = document.getElementById(elemId);
             if(!el) return;
+            // --- 修正: 寸法が空の場合は描画しない ---
+            if (res.state === 'empty') {
+                el.innerHTML = ''; 
+                return;
+            }
+
             const W = 200, H = 100;
             const padding = 20; 
             const rightMargin = 25; 
@@ -598,13 +631,13 @@
             
             const makeCircles = (count, r, y, color) => {
                 let svg = '';
-                const cnt = Math.max(count, 1);
+                const cnt = Math.max(count || 0, 1);
                 
                 const startX = originX + sideCover;
                 const endX = originX + drawW - sideCover;
                 const spanW = endX - startX;
 
-                if (cnt === 1) {
+                if (cnt === 1 || !count) {
                     svg += `<circle cx="${originX + drawW/2}" cy="${y}" r="${r}" fill="${color}" stroke="white" stroke-width="0.5"/>`;
                 } else {
                     const step = spanW / (cnt - 1);
@@ -636,7 +669,10 @@
         function updateData(idx, key, value) {
             let val = parseFloat(value);
             if (['name', 'barSizeT', 'barSizeC', 'rebarType'].includes(key)) val = value;
-            if (typeof val === 'number' && isNaN(val)) val = 0;
+            // 修正: 空文字の場合は0ではなくnullを入れる
+            if (typeof val === 'number' && isNaN(val)) val = null;
+            if (value === "") val = null; 
+
             sections[idx][key] = val;
             if (key === 'rebarType') {
                 const std = REBAR_DATA[val] ? REBAR_DATA[val].sigSa : 180;
@@ -694,13 +730,19 @@
         // --- HTML生成 (完全縦1列レイアウト・グループ強調) ---
         function createSectionHTML(idx, s, res) {
             const isErr = res.state === 'error';
+            // 修正: 入力がない場合は空の状態 (state === 'empty')
+            const isEmpty = res.state === 'empty';
+
             const makeOpts = (sel) => Object.keys(REBAR_AREAS).map(k => `<option value="${k}" ${k===sel?'selected':''}>${k}</option>`).join('');
             const makeFcOpts = (sel) => Object.keys(CONCRETE_DATA).map(k => `<option value="${k}" ${parseInt(k)===parseInt(sel)?'selected':''}>Fc${k}</option>`).join('');
             const makeRebarOpts = (sel) => Object.keys(REBAR_DATA).map(k => `<option value="${k}" ${k===sel?'selected':''}>${REBAR_DATA[k].name}</option>`).join('');
-            const fmt = (v, d=2) => (isErr || isNaN(v)) ? '-' : Math.abs(v).toFixed(d);
-            const fmtInt = (v) => (isErr || isNaN(v)) ? '-' : Math.round(v).toLocaleString();
+            
+            // 修正: 値がnull/空の場合は '-' を表示するか空欄にするヘルパー
+            const valOrEmpty = (v) => (v === null || v === undefined) ? '' : v;
+            const fmt = (v, d=2) => (isEmpty || isErr || isNaN(v)) ? '' : Math.abs(v).toFixed(d); // 結果が空なら空白
             
             const getStatus = (state) => {
+                if (isEmpty) return ''; // 空の場合はバッジを表示しない
                 if (state === 'ng') return '<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600">NG</span>';
                 if (state === 'ok') return '<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-600">OK</span>';
                 return '-';
@@ -708,9 +750,9 @@
             let copyBtn = idx > 0 ? `<button onclick="copySection1(${idx})" class="p-1 text-slate-400 hover:text-blue-600 transition no-print" title="断面1からコピー"><i data-lucide="copy" class="w-4 h-4"></i></button>` : '';
 
             // せん断の詳細情報
-            const shearDetail = `
+            const shearDetail = isEmpty ? '' : `
                 <div class="text-[9px] text-slate-400 mt-0.5 text-right font-mono">
-                    τa1:${fmt(res.allow_tauA1_base, 2)}, Ce:${fmt(res.Ce, 2)}, Cpt:${fmt(res.Cpt, 2)}, α:${s.allowFactor}
+                    τa1:${fmt(res.allow_tauA1_base, 2)}, Ce:${fmt(res.Ce, 2)}, Cpt:${fmt(res.Cpt, 2)}, α:${valOrEmpty(s.allowFactor)}
                 </div>
             `;
 
@@ -750,14 +792,14 @@
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">許容応力度 <span class="text-[9px] text-slate-400">(N/mm²)</span></label>
                                     <div class="flex items-center justify-end gap-1 w-20">
-                                        <input type="number" value="${s.userSigSa}" onchange="updateData(${idx}, 'userSigSa', this.value)" class="input-bare w-full text-blue-600">
+                                        <input type="number" value="${valOrEmpty(s.userSigSa)}" onchange="updateData(${idx}, 'userSigSa', this.value)" class="input-bare w-full text-blue-600">
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">割増係数 (α)</label>
                                     <div class="flex items-center justify-end gap-1 w-12">
                                         <span class="text-[10px] text-slate-400">x</span>
-                                        <input type="number" step="0.1" value="${s.allowFactor}" onchange="updateData(${idx}, 'allowFactor', this.value)" class="input-bare w-full">
+                                        <input type="number" step="0.1" value="${valOrEmpty(s.allowFactor)}" onchange="updateData(${idx}, 'allowFactor', this.value)" class="input-bare w-full">
                                     </div>
                                 </div>
                             </div>
@@ -770,19 +812,19 @@
                             <div class="flex flex-col gap-2">
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">幅 b</label>
-                                    <input type="number" value="${s.b}" onchange="updateData(${idx}, 'b', this.value)" class="input-bare w-16">
+                                    <input type="number" value="${valOrEmpty(s.b)}" onchange="updateData(${idx}, 'b', this.value)" class="input-bare w-16">
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">高さ h</label>
-                                    <input type="number" value="${s.D}" onchange="updateData(${idx}, 'D', this.value)" class="input-bare w-16">
+                                    <input type="number" value="${valOrEmpty(s.D)}" onchange="updateData(${idx}, 'D', this.value)" class="input-bare w-16">
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">引張鉄筋位置 dt</label>
-                                    <input type="number" value="${s.dt}" onchange="updateData(${idx}, 'dt', this.value)" class="input-bare w-16">
+                                    <input type="number" value="${valOrEmpty(s.dt)}" onchange="updateData(${idx}, 'dt', this.value)" class="input-bare w-16">
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">圧縮鉄筋位置 dp</label>
-                                    <input type="number" value="${s.dp}" onchange="updateData(${idx}, 'dp', this.value)" class="input-bare w-16">
+                                    <input type="number" value="${valOrEmpty(s.dp)}" onchange="updateData(${idx}, 'dp', this.value)" class="input-bare w-16">
                                 </div>
                             </div>
                         </div>
@@ -798,11 +840,10 @@
                                         <div class="flex items-center gap-1">
                                             <select onchange="updateData(${idx}, 'barSizeT', this.value)" class="bg-transparent border-b border-slate-300 text-[11px] font-mono py-0.5 w-12 text-right">${makeOpts(s.barSizeT)}</select>
                                             <span class="text-[10px] text-slate-400">x</span>
-                                            <input type="number" value="${s.barCountT}" onchange="updateData(${idx}, 'barCountT', this.value)" class="w-8 border-b border-slate-300 text-center font-mono text-[11px]">
+                                            <input type="number" value="${valOrEmpty(s.barCountT)}" onchange="updateData(${idx}, 'barCountT', this.value)" class="w-8 border-b border-slate-300 text-center font-mono text-[11px]">
                                         </div>
                                     </div>
                                     <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
-                                        <!-- 修正: fmtInt(整数) -> fmt(小数第2位) に変更 -->
                                         (${fmt(res.As_per_meter, 2)} mm²/m)
                                     </div>
                                 </div>
@@ -813,11 +854,10 @@
                                         <div class="flex items-center gap-1">
                                             <select onchange="updateData(${idx}, 'barSizeC', this.value)" class="bg-transparent border-b border-slate-300 text-[11px] font-mono py-0.5 w-12 text-right">${makeOpts(s.barSizeC)}</select>
                                             <span class="text-[10px] text-slate-400">x</span>
-                                            <input type="number" value="${s.barCountC}" onchange="updateData(${idx}, 'barCountC', this.value)" class="w-8 border-b border-slate-300 text-center font-mono text-[11px]">
+                                            <input type="number" value="${valOrEmpty(s.barCountC)}" onchange="updateData(${idx}, 'barCountC', this.value)" class="w-8 border-b border-slate-300 text-center font-mono text-[11px]">
                                         </div>
                                     </div>
                                     <div class="text-[9px] text-slate-400 text-right font-mono mt-0.5 pr-1">
-                                        <!-- 修正: fmtInt(整数) -> fmt(小数第2位) に変更 -->
                                         (${fmt(res.Asp_per_meter, 2)} mm²/m)
                                     </div>
                                 </div>
@@ -831,15 +871,15 @@
                             <div class="flex flex-col gap-2">
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">曲げ M <span class="text-[9px] text-slate-400">(kN·m)</span></label>
-                                    <input type="number" value="${s.M_kNm}" onchange="updateData(${idx}, 'M_kNm', this.value)" class="input-bare w-16 font-bold">
+                                    <input type="number" value="${valOrEmpty(s.M_kNm)}" onchange="updateData(${idx}, 'M_kNm', this.value)" class="input-bare w-16 font-bold">
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">軸力 N <span class="text-[9px] text-slate-400">(kN)</span></label>
-                                    <input type="number" value="${s.N_kN}" onchange="updateData(${idx}, 'N_kN', this.value)" class="input-bare w-16 font-bold text-blue-600">
+                                    <input type="number" value="${valOrEmpty(s.N_kN)}" onchange="updateData(${idx}, 'N_kN', this.value)" class="input-bare w-16 font-bold text-blue-600">
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="label-sm">せん断 S <span class="text-[9px] text-slate-400">(kN)</span></label>
-                                    <input type="number" value="${s.S_kN}" onchange="updateData(${idx}, 'S_kN', this.value)" class="input-bare w-16 font-bold">
+                                    <input type="number" value="${valOrEmpty(s.S_kN)}" onchange="updateData(${idx}, 'S_kN', this.value)" class="input-bare w-16 font-bold">
                                 </div>
                             </div>
                         </div>
@@ -863,7 +903,7 @@
                                 </div>
                                 <div class="flex justify-between px-1">
                                     <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-blue-600 text-xs">${fmt(res.sigma_c)}</span></div>
-                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${res.allow_sigC.toFixed(1)}</span></div>
+                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${fmt(res.allow_sigC, 1)}</span></div>
                                 </div>
                             </div>
 
@@ -875,7 +915,7 @@
                                 </div>
                                 <div class="flex justify-between px-1">
                                     <div class="text-[10px] text-slate-500">発生: <span class="font-mono font-bold text-red-600 text-xs">${fmt(res.sigma_s, 1)}</span></div>
-                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${res.allow_sigS.toFixed(0)}</span></div>
+                                    <div class="text-[10px] text-slate-500">許容: <span class="font-mono text-slate-600">${fmt(res.allow_sigS, 0)}</span></div>
                                 </div>
                             </div>
 
