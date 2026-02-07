@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.4.9</title>
+    <title>RC断面計算（4断面一括）Ver.5.0</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -94,7 +94,7 @@
         .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
         .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* --- 修正: 印刷設定 (左余白を20mmに縮小) --- */
+        /* --- 修正: 印刷設定 --- */
         @media print {
             /* 1. 全要素のリセット設定 (最優先) */
             * {
@@ -133,8 +133,8 @@
             /* 5. メインコンテナのレイアウト (余白調整) */
             main {
                 margin: 0 !important;
-                /* 修正: 左パディングを 30mm -> 20mm に変更 */
-                padding: 35mm 0 0 20mm !important;
+                /* 修正: 左パディングを 20mm -> 15mm に変更 */
+                padding: 35mm 0 0 15mm !important;
                 width: 100% !important;
             }
 
@@ -173,10 +173,25 @@
                 font-weight: bold !important;
                 color: #000 !important;
             }
-            .input-bare, select {
+            .input-bare {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
                 font-size: 8pt !important;
+            }
+
+            /* --- 修正: Select要素（鉄筋径など）の表示崩れ防止 --- */
+            select {
+                border: none !important;
+                border-bottom: 0.5px solid #ccc !important;
+                font-size: 8pt !important;
+                /* 矢印を消して幅を確保 */
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                width: auto !important; /* 文字数に合わせて幅を自動調整 */
+                min-width: 30px !important; /* 最低幅を確保 */
+                padding-right: 0 !important;
+                text-align: right;
             }
             
             /* 色調整 */
@@ -234,7 +249,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.9</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.0</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
