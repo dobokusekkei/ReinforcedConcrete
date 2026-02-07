@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.5.2</title>
+    <title>RC断面計算（4断面一括）Ver.5.3</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -105,7 +105,7 @@
             }
 
             /* 2. 不要なUIの完全非表示 */
-            header, .no-print, #help_modal, .btn-tool {
+            header, .no-print, #help_modal, #history_modal, .btn-tool {
                 display: none !important;
                 height: 0 !important;
                 width: 0 !important;
@@ -174,17 +174,19 @@
                 color: #000 !important;
                 font-size: 11pt !important; /* 修正: 断面名フォントサイズ拡大 */
             }
-            .input-bare {
+            
+            /* 修正: 全てのinput（鉄筋本数等を含む）のフォントサイズを10ptに */
+            .input-bare, input[type="number"] {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
-                font-size: 10pt !important; /* 修正: 入力値フォントサイズ拡大 (8pt -> 10pt) */
+                font-size: 10pt !important; /* 修正: 8pt -> 10pt */
             }
 
             /* Select要素（鉄筋径など）の表示崩れ防止 */
             select {
                 border: none !important;
                 border-bottom: 0.5px solid #ccc !important;
-                font-size: 10pt !important; /* 修正: 選択値フォントサイズ拡大 (8pt -> 10pt) */
+                font-size: 10pt !important; /* 修正: 8pt -> 10pt */
                 /* 矢印を消して幅を確保 */
                 appearance: none !important;
                 -webkit-appearance: none !important;
@@ -250,10 +252,11 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.2</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.5.3</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
+            <button onclick="toggleHistory(true)" class="btn-secondary text-slate-600"><i data-lucide="history" class="w-4 h-4"></i> 更新履歴</button>
             <button onclick="toggleHelp(true)" class="btn-secondary text-blue-600 bg-blue-50 border-blue-100 hover:bg-blue-100"><i data-lucide="help-circle" class="w-4 h-4"></i> ヘルプ・計算式</button>
             <div class="h-6 w-px bg-slate-200 mx-1"></div>
             <button onclick="saveData()" class="btn-secondary"><i data-lucide="save" class="w-4 h-4"></i> 保存</button>
@@ -408,6 +411,69 @@
                 <div class="text-center pt-8">
                     <button onclick="toggleHelp(false)" class="px-8 py-2.5 bg-slate-800 text-white rounded font-bold hover:bg-slate-700 transition shadow-lg">閉じる</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 履歴モーダル -->
+    <div id="history_modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-blue-600"></i> バージョンアップ履歴</h3>
+                <button onclick="toggleHistory(false)" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto text-slate-700 text-sm leading-relaxed space-y-4">
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.5.3 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>印刷時の鉄筋本数などのフォントサイズを拡大 (10pt)</li>
+                        <li>更新履歴機能の追加</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.5.2 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>印刷時の全体的なフォントサイズ拡大 (断面名11pt, 入力値10pt)</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.5.1 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>断面2～4の初期状態を空欄に変更</li>
+                        <li>入力がない断面の計算結果を非表示にするよう修正</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.5.0 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>印刷時の鉄筋径表示修正（プルダウンの桁落ち対応）</li>
+                        <li>印刷レイアウトの左余白を微調整</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.4.x (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>印刷プレビューが白紙になる問題を修正（Zoom方式の実装）</li>
+                        <li>印刷レイアウトをA4縦1行4列に最適化</li>
+                        <li>印刷余白・縮小率の調整</li>
+                    </ul>
+                </div>
+                <div class="border-b border-slate-100 pb-4">
+                    <h5 class="font-bold text-slate-800">Ver.3.7 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>断面力の入力単位を「部材幅1mあたり」に変更</li>
+                        <li>マニュアルの記載更新</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold text-slate-800">Ver.3.6 (2026-02-07)</h5>
+                    <ul class="list-disc list-inside text-xs text-slate-600 pl-2 mt-1">
+                        <li>ベースバージョンの作成</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-200 text-center">
+                <button onclick="toggleHistory(false)" class="px-6 py-2 bg-white border border-slate-300 text-slate-700 rounded font-bold hover:bg-slate-50 transition">閉じる</button>
             </div>
         </div>
     </div>
@@ -705,6 +771,13 @@
         }
         function toggleHelp(show) {
             const el = document.getElementById('help_modal');
+            if (show) { el.classList.remove('hidden'); setTimeout(() => el.classList.remove('opacity-0'), 10); } 
+            else { el.classList.add('opacity-0'); setTimeout(() => el.classList.add('hidden'), 200); }
+        }
+        
+        // 修正: 履歴モーダル制御
+        function toggleHistory(show) {
+            const el = document.getElementById('history_modal');
             if (show) { el.classList.remove('hidden'); setTimeout(() => el.classList.remove('opacity-0'), 10); } 
             else { el.classList.add('opacity-0'); setTimeout(() => el.classList.add('hidden'), 200); }
         }
