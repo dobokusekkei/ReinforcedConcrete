@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC断面計算（4断面一括）Ver.4.5</title>
+    <title>RC断面計算（4断面一括）Ver.4.7</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -94,7 +94,7 @@
         .sqrt-symbol { font-size: 1.2em; vertical-align: middle; }
         .sqrt-bar { border-top: 1px solid currentColor; padding-top: 1px; margin-left: 1px; display: inline-block; vertical-align: middle; }
 
-        /* --- 修正: 印刷設定 (幅1000px + Zoom 0.75) --- */
+        /* --- 修正: 印刷設定 (余白調整版) --- */
         @media print {
             /* 1. 全要素のリセット設定 (最優先) */
             * {
@@ -119,21 +119,22 @@
 
             /* 4. 親要素の幅固定と縮小 */
             html, body {
-                width: 1000px !important;     /* 4列(約950px)が確実に収まる幅を確保 */
-                min-width: 1000px !important; 
+                width: 900px !important;      /* 4列を詰めて配置するための基本幅 */
+                min-width: 900px !important; 
                 height: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background-color: white !important;
                 display: block !important;
                 
-                zoom: 0.75 !important;        /* 1000px * 0.75 = 750px (A4用紙幅にフィット) */
+                zoom: 0.90 !important;        /* 900px * 0.9 = 810px */
             }
 
-            /* 5. メインコンテナのレイアウト */
+            /* 5. メインコンテナのレイアウト (余白調整) */
             main {
                 margin: 0 !important;
-                padding: 10px 0 0 0 !important;
+                /* 上35mm, 左30mm の余白をパディングで確保して位置調整 */
+                padding: 35mm 0 0 30mm !important;
                 width: 100% !important;
             }
 
@@ -143,7 +144,7 @@
                 flex-wrap: nowrap !important;   /* 折り返し禁止 */
                 justify-content: flex-start !important;
                 align-items: flex-start !important;
-                gap: 10px !important;
+                gap: 4px !important;            /* 隙間 */
                 width: 100% !important;
             }
 
@@ -233,7 +234,7 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.5</span></h1>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight">RC断面計算 <span class="text-xs font-normal text-slate-500 ml-1 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Ver.4.7</span></h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
